@@ -1,0 +1,382 @@
+<title>Generalization Comparison</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  color-scheme: light;
+  --page:        #f9f9f7;
+  --surface-1:   #fcfcfb;
+  --text-primary:#0b0b0b;
+  --text-secondary:#52514e;
+  --muted:       #898781;
+  --grid:        #e1e0d9;
+  --baseline:    #c3c2b7;
+  --border:      rgba(11,11,11,0.10);
+  --series-home: #2a78d6;   /* BraTS2021 -- reference palette slot 1 */
+  --series-africa:#eb6834;  /* BraTS-Africa -- reference palette slot 2 */
+  --good:        #0ca30c;
+  --tile-bg:     #f3f2ee;
+  --callout-bg:  #fdf3ee;
+  --callout-border: #eb6834;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --page:         #0d0d0d;
+    --surface-1:    #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary:#c3c2b7;
+    --muted:        #898781;
+    --grid:         #2c2c2a;
+    --baseline:     #383835;
+    --border:       rgba(255,255,255,0.10);
+    --series-home:  #3987e5;
+    --series-africa:#d95926;
+    --good:         #0ca30c;
+    --tile-bg:      #202020;
+    --callout-bg:   #241a15;
+    --callout-border: #d95926;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:         #0d0d0d;
+  --surface-1:    #1a1a19;
+  --text-primary: #ffffff;
+  --text-secondary:#c3c2b7;
+  --muted:        #898781;
+  --grid:         #2c2c2a;
+  --baseline:     #383835;
+  --border:       rgba(255,255,255,0.10);
+  --series-home:  #3987e5;
+  --series-africa:#d95926;
+  --good:         #0ca30c;
+  --tile-bg:      #202020;
+  --callout-bg:   #241a15;
+  --callout-border: #d95926;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--page);
+  color:var(--text-primary);
+  font-family:'IBM Plex Sans', system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding-block: 32px;
+}
+.wrap{ max-width: 1020px; margin: 0 auto; padding: 0 20px; }
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--series-home);
+  margin-bottom: 10px;
+}
+h1{
+  font-family:'Newsreader', Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.15;
+  margin: 0 0 8px 0;
+  text-wrap: balance;
+}
+.sub{
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  line-height: 1.55;
+  max-width: 680px;
+  margin: 0 0 26px 0;
+}
+.sub b{ color: var(--text-primary); font-weight: 600; }
+
+.stats{
+  display:flex;
+  gap:1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow:hidden;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.stat{ flex: 1 1 220px; background: var(--tile-bg); padding: 14px 16px; }
+.stat .k{ font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.stat .row{ display:flex; align-items:baseline; gap:10px; font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+.stat .v{ font-size: 19px; font-weight: 500; }
+.stat .v.home{ color: var(--series-home); }
+.stat .v.africa{ color: var(--series-africa); }
+.stat .arrow{ color: var(--muted); font-size: 13px; }
+.stat .delta{ font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.callout{
+  background: var(--callout-bg);
+  border-left: 3px solid var(--callout-border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 28px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.callout b{ color: var(--text-primary); }
+
+.panel{
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 20px 14px;
+  margin-bottom: 20px;
+}
+.panel-head{ display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+.panel-title{ font-family:'Newsreader', Georgia, serif; font-size: 19px; font-weight: 600; }
+.panel-title .dir{ font-family:'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 6px; }
+
+.legend{ display:flex; flex-wrap:wrap; gap: 4px 16px; margin: 10px 0 10px; }
+.legend .item{ display:flex; align-items:center; gap:6px; font-size: 12.5px; color: var(--text-secondary); }
+.legend .sw{ width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+.chart-holder{ position: relative; overflow-x: auto; }
+svg.chart{ display:block; }
+.gridline{ stroke: var(--grid); stroke-width: 1; }
+.baseline{ stroke: var(--baseline); stroke-width: 1; }
+.tick-label{ font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 10.5px; fill: var(--muted); }
+.cat-label{ font-family:'IBM Plex Sans', sans-serif; font-size: 11.5px; fill: var(--text-secondary); }
+.bar{ rx: 3; }
+.bar-label{ font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 10px; fill: var(--text-secondary); }
+.bar:hover{ opacity: 0.85; }
+
+.tooltip{
+  position:absolute; pointer-events:none;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  padding: 8px 10px;
+  font-size: 12px;
+  min-width: 150px;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+  z-index: 5;
+}
+.tooltip .tt-cat{ font-family:'IBM Plex Mono', monospace; font-weight: 500; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; }
+.tooltip .tt-row{ display:flex; justify-content:space-between; gap: 14px; padding: 1.5px 0; }
+.tooltip .tt-row .n{ display:flex; align-items:center; gap:5px; color: var(--text-secondary); }
+.tooltip .tt-row .n .d{ width:7px;height:7px;border-radius:50%; }
+.tooltip .tt-row .val{ font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+
+.note{
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin: 20px 0 0;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+@media (max-width: 480px){
+  .panel{ padding:16px 14px 10px; }
+}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Custom3DUNet_LatentGAT &middot; out-of-distribution evaluation</div>
+  <h1>BraTS2021 vs. BraTS-Africa</h1>
+  <p class="sub">
+    Same trained checkpoint (<b>epoch 70</b>, the best-scoring epoch on the combined
+    Dice+HD95 rank), evaluated on two populations: the home validation split
+    (<b>BraTS2021</b>, n=251) and an out-of-distribution external cohort
+    (<b>BraTS-Africa</b>, n=95). Same <code>evaluate_full_metrics</code> pipeline,
+    same 4-view TTA, same post-processing settings for both runs.
+  </p>
+
+  <div class="stats" id="statStrip"></div>
+
+  <div class="callout" id="callout"></div>
+
+  <div id="charts"></div>
+
+  <p class="note">
+    Dice and NSD are unitless in [0,1] (higher is better); HD95 is reported in
+    millimeters (lower is better). "Mean" is the arithmetic mean of the five
+    sub-region scores, matching the training dashboard's convention. BraTS-Africa
+    labels are public (TCIA-hosted); BraTS2021 numbers come from the tracked
+    epoch-70 validation checkpoint, not a separate held-out submission.
+  </p>
+</div>
+
+<script>
+const REGIONS = ["Mean", "WT", "TC", "ET", "NCR", "Edema"];
+
+// epoch 70 (BraTS2021 home cohort) vs the 95-case BraTS-Africa evaluation
+const metrics = [
+  {
+    id: 'dice', title: 'Dice Score', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
+    home:   { Mean: 0.8552, WT: 0.9134, TC: 0.8964, ET: 0.8498, NCR: 0.7546, Edema: 0.8311 },
+    africa: { Mean: 0.7840, WT: 0.9085, TC: 0.7794, ET: 0.7965, NCR: 0.5724, Edema: 0.7764 },
+  },
+  {
+    id: 'hd95', title: 'HD95', dirIcon: '↓ lower is better', unit: 'mm', decimals: 1, domainMax: null,
+    home:   { Mean: 10.78, WT: 7.93, TC: 4.77, ET: 12.76, NCR: 20.24, Edema: 8.18 },
+    africa: { Mean: 17.73, WT: 12.29, TC: 15.50, ET: 11.52, NCR: 35.46, Edema: 13.86 },
+  },
+  {
+    id: 'nsd', title: 'Normalized Surface Dice', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
+    home:   { Mean: 0.8800, WT: 0.8971, TC: 0.8928, ET: 0.9147, NCR: 0.8049, Edema: 0.8905 },
+    africa: { Mean: 0.7770, WT: 0.8637, TC: 0.7289, ET: 0.8484, NCR: 0.6234, Edema: 0.8206 },
+  },
+  {
+    id: 'sens', title: 'Sensitivity (Recall)', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
+    home:   { Mean: 0.8665, WT: 0.9256, TC: 0.8886, ET: 0.8655, NCR: 0.8168, Edema: 0.8764 },
+    africa: { Mean: 0.7899, WT: 0.9196, TC: 0.8243, ET: 0.7533, NCR: 0.7853, Edema: 0.8187 },
+  },
+  {
+    id: 'prec', title: 'Precision', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
+    home:   { Mean: 0.8539, WT: 0.9123, TC: 0.9321, ET: 0.8763, NCR: 0.7955, Edema: 0.8158 },
+    africa: { Mean: 0.7954, WT: 0.9179, TC: 0.8162, ET: 0.8937, NCR: 0.5667, Edema: 0.7866 },
+  },
+  {
+    id: 'spec', title: 'Specificity', dirIcon: '↑ higher is better', unit: '', decimals: 3, domainMax: 1,
+    home:   { Mean: 0.9989, WT: 0.9982, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9976 },
+    africa: { Mean: 0.9974, WT: 0.9973, TC: 0.9976, ET: 0.9995, NCR: 0.9971, Edema: 0.9956 },
+  },
+];
+
+function fmt(v, decimals){ return v.toFixed(decimals); }
+
+function renderStats(){
+  const dice = metrics[0], hd95 = metrics[1], nsd = metrics[2];
+  const rows = [
+    { label: 'Dice Mean', h: dice.home.Mean, a: dice.africa.Mean, decimals: 3, unit: '' },
+    { label: 'HD95 Mean', h: hd95.home.Mean, a: hd95.africa.Mean, decimals: 2, unit: 'mm' },
+    { label: 'NSD Mean',  h: nsd.home.Mean,  a: nsd.africa.Mean,  decimals: 3, unit: '' },
+  ];
+  const el = document.getElementById('statStrip');
+  el.innerHTML = rows.map(r => {
+    const delta = r.a - r.h;
+    const deltaTxt = (delta >= 0 ? '+' : '') + delta.toFixed(r.decimals) + r.unit;
+    return `
+    <div class="stat">
+      <div class="k">${r.label}</div>
+      <div class="row">
+        <span class="v home">${r.h.toFixed(r.decimals)}${r.unit}</span>
+        <span class="arrow">&rarr;</span>
+        <span class="v africa">${r.a.toFixed(r.decimals)}${r.unit}</span>
+      </div>
+      <div class="delta">BraTS-Africa delta: ${deltaTxt}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('callout').innerHTML = `
+    <b>Finding:</b> WT, TC, ET, and Edema all generalize well to BraTS-Africa
+    (Dice within ~0.01&ndash;0.13 of home performance, several regions matching
+    almost exactly). <b>NCR (necrotic core) is the outlier</b> &mdash; Dice drops
+    from ${dice.home.NCR.toFixed(3)} to ${dice.africa.NCR.toFixed(3)}, HD95 rises
+    from ${hd95.home.NCR.toFixed(1)}mm to ${hd95.africa.NCR.toFixed(1)}mm, and it
+    is the only region where <b>Precision</b> (${metrics[4].home.NCR.toFixed(3)} &rarr;
+    ${metrics[4].africa.NCR.toFixed(3)}) falls much further than <b>Sensitivity</b>
+    (${metrics[3].home.NCR.toFixed(3)} &rarr; ${metrics[3].africa.NCR.toFixed(3)})
+    &mdash; the same precision/sensitivity imbalance shape seen during training
+    before the epoch-26 NCR breakout, reappearing on a sufficiently different
+    population.
+  `;
+}
+
+function renderChart(metric){
+  const W = 900, H = 280;
+  const M = {top: 16, right: 18, bottom: 34, left: metric.id === 'hd95' ? 42 : 36};
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+
+  const allVals = REGIONS.flatMap(r => [metric.home[r], metric.africa[r]]);
+  let yMax = metric.domainMax != null ? metric.domainMax : Math.max(...allVals) * 1.15;
+  let yMin = 0;
+  const yTicks = metric.domainMax != null
+    ? [0, 0.25, 0.5, 0.75, 1.0]
+    : (() => { const n=4, ticks=[]; for(let i=0;i<=n;i++) ticks.push(yMax*i/n); return ticks; })();
+
+  const y = v => M.top + plotH - (v / yMax) * plotH;
+
+  const groupW = plotW / REGIONS.length;
+  const barW = Math.min(34, groupW * 0.30);
+  const barGap = 4;
+
+  const gridSvg = yTicks.map(t => `
+    <line class="gridline" x1="${M.left}" x2="${W-M.right}" y1="${y(t)}" y2="${y(t)}"></line>
+    <text class="tick-label" x="${M.left-8}" y="${y(t)+3}" text-anchor="end">${metric.domainMax!=null ? t.toFixed(2) : t.toFixed(0)}</text>
+  `).join('');
+
+  let barsSvg = '', labelsSvg = '', catLabelsSvg = '', hoverSvg = '';
+  REGIONS.forEach((region, i) => {
+    const cx = M.left + groupW * i + groupW/2;
+    const hVal = metric.home[region], aVal = metric.africa[region];
+    const hX = cx - barGap/2 - barW;
+    const aX = cx + barGap/2;
+    const hY = y(hVal), aY = y(aVal);
+
+    barsSvg += `<rect class="bar" data-region="${region}" data-series="home" x="${hX}" y="${hY}" width="${barW}" height="${M.top+plotH-hY}" rx="3" fill="var(--series-home)"></rect>`;
+    barsSvg += `<rect class="bar" data-region="${region}" data-series="africa" x="${aX}" y="${aY}" width="${barW}" height="${M.top+plotH-aY}" rx="3" fill="var(--series-africa)"></rect>`;
+
+    labelsSvg += `<text class="bar-label" x="${hX+barW/2}" y="${hY-5}" text-anchor="middle">${fmt(hVal, metric.decimals)}</text>`;
+    labelsSvg += `<text class="bar-label" x="${aX+barW/2}" y="${aY-5}" text-anchor="middle">${fmt(aVal, metric.decimals)}</text>`;
+
+    catLabelsSvg += `<text class="cat-label" x="${cx}" y="${H-12}" text-anchor="middle" font-weight="${region==='Mean'?600:400}">${region}</text>`;
+
+    hoverSvg += `<rect class="hover-col" data-region="${region}" x="${M.left+groupW*i}" y="${M.top}" width="${groupW}" height="${plotH}" fill="transparent"></rect>`;
+  });
+
+  return `
+  <div class="panel" id="panel-${metric.id}">
+    <div class="panel-head">
+      <div class="panel-title">${metric.title}<span class="dir">${metric.dirIcon}${metric.unit ? ' &middot; ' + metric.unit : ''}</span></div>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="sw" style="background:var(--series-home)"></span>BraTS2021 (home, epoch 70)</div>
+      <div class="item"><span class="sw" style="background:var(--series-africa)"></span>BraTS-Africa (external, n=95)</div>
+    </div>
+    <div class="chart-holder" id="holder-${metric.id}">
+      <svg class="chart" id="svg-${metric.id}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="${metric.title} comparison between BraTS2021 and BraTS-Africa, mean and per region">
+        <g>${gridSvg}</g>
+        <line class="baseline" x1="${M.left}" x2="${W-M.right}" y1="${M.top+plotH}" y2="${M.top+plotH}"></line>
+        <g>${barsSvg}</g>
+        <g>${labelsSvg}</g>
+        <g>${catLabelsSvg}</g>
+        <g>${hoverSvg}</g>
+      </svg>
+      <div class="tooltip" id="tooltip-${metric.id}"></div>
+    </div>
+  </div>`;
+}
+
+document.getElementById('charts').innerHTML = metrics.map(renderChart).join('');
+renderStats();
+
+metrics.forEach(metric => {
+  const svg = document.getElementById(`svg-${metric.id}`);
+  const holder = document.getElementById(`holder-${metric.id}`);
+  const tooltip = document.getElementById(`tooltip-${metric.id}`);
+
+  svg.querySelectorAll('.hover-col').forEach(col => {
+    const region = col.dataset.region;
+    const showTip = () => {
+      const hVal = metric.home[region], aVal = metric.africa[region];
+      tooltip.innerHTML = `
+        <div class="tt-cat">${region}</div>
+        <div class="tt-row"><span class="n"><span class="d" style="background:var(--series-home)"></span>BraTS2021</span><span class="val">${fmt(hVal, metric.decimals)}${metric.unit}</span></div>
+        <div class="tt-row"><span class="n"><span class="d" style="background:var(--series-africa)"></span>BraTS-Africa</span><span class="val">${fmt(aVal, metric.decimals)}${metric.unit}</span></div>
+      `;
+      tooltip.style.opacity = 1;
+      const rect = col.getBoundingClientRect();
+      const holderRect = holder.getBoundingClientRect();
+      const localX = rect.left - holderRect.left + rect.width/2;
+      const clamped = Math.min(Math.max(localX, 78), holder.clientWidth - 78);
+      tooltip.style.left = `${clamped - 78}px`;
+      tooltip.style.top = `8px`;
+    };
+    col.addEventListener('mouseenter', showTip);
+    col.addEventListener('mousemove', showTip);
+  });
+  svg.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+});
+</script>

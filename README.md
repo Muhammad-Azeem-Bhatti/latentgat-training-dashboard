@@ -4,4 +4,6 @@ Live training-metrics chart (Dice, HD95, NSD, Sensitivity, Precision, Specificit
 
 **Live page:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/
 
-Single self-contained `index.html`, no build step or dependencies beyond a Google Fonts stylesheet.
+**Generalization comparison:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/generalization-comparison.html — the same metric suite comparing the epoch-70 checkpoint on the home BraTS2021 validation split vs. the out-of-distribution BraTS-Africa cohort.
+
+Two self-contained HTML pages, no build step or dependencies beyond a Google Fonts stylesheet.
