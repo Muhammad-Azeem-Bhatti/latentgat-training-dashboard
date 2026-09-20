@@ -210,7 +210,41 @@ h1{
 }
 
 .chart-holder{ position: relative; }
-svg.chart{ width: 100%; height: auto; display:block; overflow: visible; }
+.chart-scroll{
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+.chart-scroll::-webkit-scrollbar{ height: 7px; }
+.chart-scroll::-webkit-scrollbar-track{ background: transparent; }
+.chart-scroll::-webkit-scrollbar-thumb{ background: var(--border); border-radius: 4px; }
+.chart-scroll::-webkit-scrollbar-thumb:hover{ background: var(--muted); }
+svg.chart{ display:block; overflow: visible; }
+
+.scrubber{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.scrubber-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.scrubber input[type="range"]{
+  flex: 1;
+  accent-color: var(--series-1);
+  cursor: pointer;
+}
 .gridline{ stroke: var(--grid); stroke-width: 1; }
 .baseline{ stroke: var(--baseline); stroke-width: 1; }
 .tick-label{
@@ -310,6 +344,11 @@ table.data-table tbody tr:last-child td{ border-bottom:none; }
   </p>
 
   <div class="stats" id="statStrip"></div>
+
+  <div class="scrubber">
+    <span class="scrubber-label">Epoch <span id="scrubStart">1</span>&ndash;<span id="scrubEnd">1</span> of <span id="scrubTotal">1</span></span>
+    <input type="range" id="epochScrub" min="0" max="1000" value="1000" step="1" aria-label="Scroll through epochs">
+  </div>
 
   <div id="charts"></div>
 
@@ -423,6 +462,15 @@ const metrics = [
 ];
 // ===DATA_END===
 
+const CHART_H = 300;
+const CHART_M = {top: 16, right: 18, bottom: 26, left: 46};
+const POINT_SPACING = 22; // px between adjacent epochs -- keeps dots/lines legible as epoch count grows
+const CHART_MIN_W = 860;
+const CHART_W = Math.max(
+  CHART_MIN_W,
+  CHART_M.left + CHART_M.right + (epochs.length - 1) * POINT_SPACING
+);
+
 function renderStats(){
   const last = i => epochs.length - 1;
   const li = epochs.length - 1;
@@ -470,8 +518,8 @@ function niceTicks(lo, hi, n){
 }
 
 function renderChart(metric){
-  const W = 860, H = 300;
-  const M = {top: 16, right: 18, bottom: 26, left: 46};
+  const W = CHART_W, H = CHART_H;
+  const M = CHART_M;
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
   const names = Object.keys(metric.series);
@@ -539,17 +587,19 @@ function renderChart(metric){
     </div>
     <div class="legend">${legendSvg}</div>
     <div class="chart-holder" id="holder-${metric.id}">
-      <svg class="chart" id="svg-${metric.id}" viewBox="0 0 ${W} ${H}" role="img"
-           aria-label="${metric.title} across epochs 1 to 7, series Mean, WT, TC, ET, NCR, Edema">
-        ${warmBand}
-        <g>${gridSvg}</g>
-        <line class="baseline" x1="${M.left}" x2="${W-M.right}" y1="${M.top+plotH}" y2="${M.top+plotH}"></line>
-        <g>${xLabels}</g>
-        <g>${linesSvg}</g>
-        <g>${dotsSvg}</g>
-        <line class="crosshair" id="crosshair-${metric.id}" x1="0" x2="0" y1="${M.top}" y2="${M.top+plotH}"></line>
-        <g>${hoverCols}</g>
-      </svg>
+      <div class="chart-scroll" id="scroll-${metric.id}">
+        <svg class="chart" id="svg-${metric.id}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"
+             aria-label="${metric.title} across epochs ${epochs[0]} to ${epochs[epochs.length-1]}, series Mean, WT, TC, ET, NCR, Edema">
+          ${warmBand}
+          <g>${gridSvg}</g>
+          <line class="baseline" x1="${M.left}" x2="${W-M.right}" y1="${M.top+plotH}" y2="${M.top+plotH}"></line>
+          <g>${xLabels}</g>
+          <g>${linesSvg}</g>
+          <g>${dotsSvg}</g>
+          <line class="crosshair" id="crosshair-${metric.id}" x1="0" x2="0" y1="${M.top}" y2="${M.top+plotH}"></line>
+          <g>${hoverCols}</g>
+        </svg>
+      </div>
       <div class="tooltip" id="tooltip-${metric.id}"></div>
     </div>
     <div class="table-wrap" id="table-${metric.id}" hidden>
@@ -566,13 +616,12 @@ renderStats();
 
 metrics.forEach(metric => {
   const svg = document.getElementById(`svg-${metric.id}`);
+  const scrollEl = document.getElementById(`scroll-${metric.id}`);
   const tooltip = document.getElementById(`tooltip-${metric.id}`);
   const crosshair = document.getElementById(`crosshair-${metric.id}`);
   const names = Object.keys(metric.series);
-  const W = 860;
-  const M_left = 46, M_right = 18;
-  const plotW = W - M_left - M_right;
-  const xAt = i => M_left + (plotW * i) / (epochs.length - 1);
+  const plotW = CHART_W - CHART_M.left - CHART_M.right;
+  const xAt = i => CHART_M.left + (plotW * i) / (epochs.length - 1);
 
   svg.querySelectorAll('.hover-col').forEach(col => {
     const idx = +col.dataset.idx;
@@ -595,9 +644,13 @@ metrics.forEach(metric => {
       </div>`).join('');
     tooltip.innerHTML = `<div class="tt-epoch">Epoch ${epochs[idx]}</div>${rows}`;
     tooltip.style.opacity = 1;
-    const pct = xAt(idx) / W * 100;
-    const leftPct = Math.min(Math.max(pct, 14), 86);
-    tooltip.style.left = `calc(${leftPct}% - 74px)`;
+    // Position relative to the *visible* viewport of the scroll container, not
+    // the full (possibly much wider) scrollable content -- xAt(idx) is in the
+    // SVG's own pixel space, so subtracting scrollLeft gives on-screen position.
+    const visibleX = xAt(idx) - scrollEl.scrollLeft;
+    const holderWidth = scrollEl.clientWidth;
+    const clampedLeft = Math.min(Math.max(visibleX, 74), holderWidth - 74);
+    tooltip.style.left = `${clampedLeft - 74}px`;
     tooltip.style.top = `8px`;
   }
 
@@ -624,4 +677,74 @@ metrics.forEach(metric => {
     toggleBtn.setAttribute('aria-pressed', String(!showingTable));
   });
 });
+
+// Shared horizontal scrubber -- all six chart panels share the same epoch
+// x-axis, so one slider (plus native trackpad/touch scroll on any panel)
+// scrubs all of them together.
+(function setupScrubber(){
+  const slider = document.getElementById('epochScrub');
+  const scrubStart = document.getElementById('scrubStart');
+  const scrubEnd = document.getElementById('scrubEnd');
+  const scrubTotal = document.getElementById('scrubTotal');
+  const scrollers = metrics.map(m => document.getElementById(`scroll-${m.id}`));
+  const plotW = CHART_W - CHART_M.left - CHART_M.right;
+  const xAt = i => CHART_M.left + (plotW * i) / (epochs.length - 1);
+
+  scrubTotal.textContent = epochs.length;
+  let syncing = false;
+
+  function visibleRange(scrollEl){
+    const lo = scrollEl.scrollLeft;
+    const hi = lo + scrollEl.clientWidth;
+    let firstIdx = 0, lastIdx = epochs.length - 1;
+    for(let i=0;i<epochs.length;i++){
+      if(xAt(i) >= lo){ firstIdx = i; break; }
+    }
+    for(let i=epochs.length-1;i>=0;i--){
+      if(xAt(i) <= hi){ lastIdx = i; break; }
+    }
+    return [firstIdx, lastIdx];
+  }
+
+  function applyRatio(ratio){
+    syncing = true;
+    scrollers.forEach(el => {
+      const max = el.scrollWidth - el.clientWidth;
+      el.scrollLeft = ratio * max;
+    });
+    syncing = false;
+    updateLabel(scrollers[0]);
+  }
+
+  function updateLabel(fromEl){
+    const [a, b] = visibleRange(fromEl);
+    scrubStart.textContent = epochs[a];
+    scrubEnd.textContent = epochs[b];
+  }
+
+  slider.addEventListener('input', () => {
+    applyRatio(+slider.value / 1000);
+  });
+
+  scrollers.forEach(scrollEl => {
+    scrollEl.addEventListener('scroll', () => {
+      if(syncing) return;
+      const max = scrollEl.scrollWidth - scrollEl.clientWidth;
+      const ratio = max > 0 ? scrollEl.scrollLeft / max : 0;
+      syncing = true;
+      scrollers.forEach(other => {
+        if(other === scrollEl) return;
+        const otherMax = other.scrollWidth - other.clientWidth;
+        other.scrollLeft = ratio * otherMax;
+      });
+      syncing = false;
+      slider.value = Math.round(ratio * 1000);
+      updateLabel(scrollEl);
+    });
+  });
+
+  // Start scrolled to the most recent epochs -- this is a live run, the
+  // newest data is what matters most on first paint.
+  applyRatio(1);
+})();
 </script>
