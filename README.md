@@ -4,4 +4,4 @@ Live training-metrics chart (Dice, HD95, NSD, Sensitivity, Precision, Specificit
 
 **Live page:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/
 
-Single self-contained `index.html`, no build step or dependencies beyond a Google Fonts stylesheet. To update with new epochs, regenerate the embedded data block from a `training_metrics_history_*.csv` and copy the result in as `index.html`, then push.
+Single self-contained `index.html`, no build step or dependencies beyond a Google Fonts stylesheet.
