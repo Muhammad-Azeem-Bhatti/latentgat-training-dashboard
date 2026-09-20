@@ -13,11 +13,14 @@
   --baseline:    #c3c2b7;
   --border:      rgba(11,11,11,0.10);
   --series-home: #2a78d6;   /* BraTS2021 -- reference palette slot 1 */
-  --series-africa:#eb6834;  /* BraTS-Africa -- reference palette slot 2 */
+  --series-africa:#eb6834;  /* BraTS-Africa Glioma -- reference palette slot 2 */
+  --series-other: #1baf7a;  /* BraTS-Africa Other Neoplasms -- reference palette slot 3 */
   --good:        #0ca30c;
   --tile-bg:     #f3f2ee;
   --callout-bg:  #fdf3ee;
   --callout-border: #eb6834;
+  --callout2-bg: #f0f9f5;
+  --callout2-border: #1baf7a;
 }
 @media (prefers-color-scheme: dark){
   :root:where(:not([data-theme="light"])){
@@ -32,10 +35,13 @@
     --border:       rgba(255,255,255,0.10);
     --series-home:  #3987e5;
     --series-africa:#d95926;
+    --series-other: #199e70;
     --good:         #0ca30c;
     --tile-bg:      #202020;
     --callout-bg:   #241a15;
     --callout-border: #d95926;
+    --callout2-bg:  #132119;
+    --callout2-border: #199e70;
   }
 }
 :root[data-theme="dark"]{
@@ -50,10 +56,13 @@
   --border:       rgba(255,255,255,0.10);
   --series-home:  #3987e5;
   --series-africa:#d95926;
+  --series-other: #199e70;
   --good:         #0ca30c;
   --tile-bg:      #202020;
   --callout-bg:   #241a15;
   --callout-border: #d95926;
+  --callout2-bg:  #132119;
+  --callout2-border: #199e70;
 }
 
 *{box-sizing:border-box;}
@@ -100,7 +109,7 @@ h1{
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
-.stat{ flex: 1 1 220px; background: var(--tile-bg); padding: 14px 16px; }
+.stat{ flex: 1 1 260px; background: var(--tile-bg); padding: 14px 16px; }
 .stat .k{ font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
 .stat .row{ display:flex; align-items:baseline; gap:10px; font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
 .stat .v{ font-size: 19px; font-weight: 500; }
@@ -114,12 +123,17 @@ h1{
   border-left: 3px solid var(--callout-border);
   border-radius: 8px;
   padding: 14px 18px;
-  margin-bottom: 28px;
+  margin-bottom: 14px;
   font-size: 13.5px;
   line-height: 1.6;
   color: var(--text-secondary);
 }
 .callout b{ color: var(--text-primary); }
+.callout.other{
+  background: var(--callout2-bg);
+  border-left-color: var(--callout2-border);
+  margin-bottom: 28px;
+}
 
 .panel{
   background: var(--surface-1);
@@ -154,7 +168,7 @@ svg.chart{ display:block; }
   box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   padding: 8px 10px;
   font-size: 12px;
-  min-width: 150px;
+  min-width: 168px;
   opacity: 0;
   transition: opacity 0.08s ease;
   z-index: 5;
@@ -184,113 +198,142 @@ svg.chart{ display:block; }
   <h1>BraTS2021 vs. BraTS-Africa</h1>
   <p class="sub">
     Same trained checkpoint (<b>epoch 70</b>, the best-scoring epoch on the combined
-    Dice+HD95 rank), evaluated on two populations: the home validation split
-    (<b>BraTS2021</b>, n=251) and an out-of-distribution external cohort
-    (<b>BraTS-Africa</b>, n=95). Same <code>evaluate_full_metrics</code> pipeline,
-    same 4-view TTA, same post-processing settings for both runs.
+    Dice+HD95 rank), evaluated on three cohorts: the home validation split
+    (<b>BraTS2021</b>, n=251), an out-of-distribution external glioma cohort
+    (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a same-country cohort of
+    <b>non-glioma</b> brain tumors (<b>BraTS-Africa &mdash; Other Neoplasms</b>, n=51)
+    the model was never trained to segment. Same <code>evaluate_full_metrics</code>
+    pipeline, same 4-view TTA, same post-processing settings for all three.
   </p>
 
   <div class="stats" id="statStrip"></div>
 
   <div class="callout" id="callout"></div>
+  <div class="callout other" id="calloutOther"></div>
 
   <div id="charts"></div>
 
   <p class="note">
     Dice and NSD are unitless in [0,1] (higher is better); HD95 is reported in
     millimeters (lower is better). "Mean" is the arithmetic mean of the five
-    sub-region scores, matching the training dashboard's convention. BraTS-Africa
-    labels are public (TCIA-hosted); BraTS2021 numbers come from the tracked
-    epoch-70 validation checkpoint, not a separate held-out submission.
+    sub-region scores, matching the training dashboard's convention. Both
+    BraTS-Africa cohorts' labels are public (TCIA-hosted); BraTS2021 numbers
+    come from the tracked epoch-70 validation checkpoint, not a separate
+    held-out submission. Other Neoplasms is a non-glioma cohort (meningiomas,
+    metastases, and other CNS tumors) included as an out-of-task robustness
+    check, not as evidence for or against glioma generalization.
   </p>
 </div>
 
 <script>
 const REGIONS = ["Mean", "WT", "TC", "ET", "NCR", "Edema"];
 
-// epoch 70 (BraTS2021 home cohort) vs the 95-case BraTS-Africa evaluation
+const SERIES = [
+  { key: 'home',         label: 'BraTS2021 (home, epoch 70)',                    short: 'BraTS2021',    colorVar: '--series-home' },
+  { key: 'africaGlioma', label: 'BraTS-Africa — Glioma (n=95)',              short: 'Africa Glioma', colorVar: '--series-africa' },
+  { key: 'africaOther',  label: 'BraTS-Africa — Other Neoplasms (n=51, out-of-task)', short: 'Africa Other', colorVar: '--series-other' },
+];
+
+// epoch 70 (BraTS2021 home cohort) vs the two BraTS-Africa evaluations
 const metrics = [
   {
     id: 'dice', title: 'Dice Score', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:   { Mean: 0.8552, WT: 0.9134, TC: 0.8964, ET: 0.8498, NCR: 0.7546, Edema: 0.8311 },
-    africa: { Mean: 0.7840, WT: 0.9085, TC: 0.7794, ET: 0.7965, NCR: 0.5724, Edema: 0.7764 },
+    home:         { Mean: 0.8552, WT: 0.9134, TC: 0.8964, ET: 0.8498, NCR: 0.7546, Edema: 0.8311 },
+    africaGlioma: { Mean: 0.7840, WT: 0.9085, TC: 0.7794, ET: 0.7965, NCR: 0.5724, Edema: 0.7764 },
+    africaOther:  { Mean: 0.7375, WT: 0.8391, TC: 0.7540, ET: 0.7875, NCR: 0.3319, Edema: 0.7064 },
   },
   {
     id: 'hd95', title: 'HD95', dirIcon: '↓ lower is better', unit: 'mm', decimals: 1, domainMax: null,
-    home:   { Mean: 10.78, WT: 7.93, TC: 4.77, ET: 12.76, NCR: 20.24, Edema: 8.18 },
-    africa: { Mean: 17.73, WT: 12.29, TC: 15.50, ET: 11.52, NCR: 35.46, Edema: 13.86 },
+    home:         { Mean: 10.78, WT: 7.93, TC: 4.77, ET: 12.76, NCR: 20.24, Edema: 8.18 },
+    africaGlioma: { Mean: 17.73, WT: 12.29, TC: 15.50, ET: 11.52, NCR: 35.46, Edema: 13.86 },
+    africaOther:  { Mean: 27.68, WT: 18.79, TC: 21.95, ET: 18.39, NCR: 54.45, Edema: 24.80 },
   },
   {
     id: 'nsd', title: 'Normalized Surface Dice', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:   { Mean: 0.8800, WT: 0.8971, TC: 0.8928, ET: 0.9147, NCR: 0.8049, Edema: 0.8905 },
-    africa: { Mean: 0.7770, WT: 0.8637, TC: 0.7289, ET: 0.8484, NCR: 0.6234, Edema: 0.8206 },
+    home:         { Mean: 0.8800, WT: 0.8971, TC: 0.8928, ET: 0.9147, NCR: 0.8049, Edema: 0.8905 },
+    africaGlioma: { Mean: 0.7770, WT: 0.8637, TC: 0.7289, ET: 0.8484, NCR: 0.6234, Edema: 0.8206 },
+    africaOther:  { Mean: 0.6877, WT: 0.7715, TC: 0.6979, ET: 0.7907, NCR: 0.4257, Edema: 0.7529 },
   },
   {
     id: 'sens', title: 'Sensitivity (Recall)', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:   { Mean: 0.8665, WT: 0.9256, TC: 0.8886, ET: 0.8655, NCR: 0.8168, Edema: 0.8764 },
-    africa: { Mean: 0.7899, WT: 0.9196, TC: 0.8243, ET: 0.7533, NCR: 0.7853, Edema: 0.8187 },
+    home:         { Mean: 0.8665, WT: 0.9256, TC: 0.8886, ET: 0.8655, NCR: 0.8168, Edema: 0.8764 },
+    africaGlioma: { Mean: 0.7899, WT: 0.9196, TC: 0.8243, ET: 0.7533, NCR: 0.7853, Edema: 0.8187 },
+    africaOther:  { Mean: 0.7459, WT: 0.8494, TC: 0.7935, ET: 0.7624, NCR: 0.5943, Edema: 0.7795 },
   },
   {
     id: 'prec', title: 'Precision', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:   { Mean: 0.8539, WT: 0.9123, TC: 0.9321, ET: 0.8763, NCR: 0.7955, Edema: 0.8158 },
-    africa: { Mean: 0.7954, WT: 0.9179, TC: 0.8162, ET: 0.8937, NCR: 0.5667, Edema: 0.7866 },
+    home:         { Mean: 0.8539, WT: 0.9123, TC: 0.9321, ET: 0.8763, NCR: 0.7955, Edema: 0.8158 },
+    africaGlioma: { Mean: 0.7954, WT: 0.9179, TC: 0.8162, ET: 0.8937, NCR: 0.5667, Edema: 0.7866 },
+    africaOther:  { Mean: 0.7653, WT: 0.8697, TC: 0.8058, ET: 0.8935, NCR: 0.3574, Edema: 0.7181 },
   },
   {
     id: 'spec', title: 'Specificity', dirIcon: '↑ higher is better', unit: '', decimals: 3, domainMax: 1,
-    home:   { Mean: 0.9989, WT: 0.9982, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9976 },
-    africa: { Mean: 0.9974, WT: 0.9973, TC: 0.9976, ET: 0.9995, NCR: 0.9971, Edema: 0.9956 },
+    home:         { Mean: 0.9989, WT: 0.9982, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9976 },
+    africaGlioma: { Mean: 0.9974, WT: 0.9973, TC: 0.9976, ET: 0.9995, NCR: 0.9971, Edema: 0.9956 },
+    africaOther:  { Mean: 0.9979, WT: 0.9968, TC: 0.9983, ET: 0.9995, NCR: 0.9981, Edema: 0.9962 },
   },
 ];
 
 function fmt(v, decimals){ return v.toFixed(decimals); }
 
 function renderStats(){
-  const dice = metrics[0], hd95 = metrics[1], nsd = metrics[2];
+  const dice = metrics[0], hd95 = metrics[1], nsd = metrics[2], sens = metrics[3], prec = metrics[4];
   const rows = [
-    { label: 'Dice Mean', h: dice.home.Mean, a: dice.africa.Mean, decimals: 3, unit: '' },
-    { label: 'HD95 Mean', h: hd95.home.Mean, a: hd95.africa.Mean, decimals: 2, unit: 'mm' },
-    { label: 'NSD Mean',  h: nsd.home.Mean,  a: nsd.africa.Mean,  decimals: 3, unit: '' },
+    { label: 'Dice Mean', h: dice.home.Mean, g: dice.africaGlioma.Mean, o: dice.africaOther.Mean, decimals: 3, unit: '' },
+    { label: 'HD95 Mean', h: hd95.home.Mean, g: hd95.africaGlioma.Mean, o: hd95.africaOther.Mean, decimals: 2, unit: 'mm' },
+    { label: 'NSD Mean',  h: nsd.home.Mean,  g: nsd.africaGlioma.Mean,  o: nsd.africaOther.Mean,  decimals: 3, unit: '' },
   ];
   const el = document.getElementById('statStrip');
-  el.innerHTML = rows.map(r => {
-    const delta = r.a - r.h;
-    const deltaTxt = (delta >= 0 ? '+' : '') + delta.toFixed(r.decimals) + r.unit;
-    return `
+  el.innerHTML = rows.map(r => `
     <div class="stat">
       <div class="k">${r.label}</div>
       <div class="row">
         <span class="v home">${r.h.toFixed(r.decimals)}${r.unit}</span>
         <span class="arrow">&rarr;</span>
-        <span class="v africa">${r.a.toFixed(r.decimals)}${r.unit}</span>
+        <span class="v africa">${r.g.toFixed(r.decimals)}${r.unit}</span>
+        <span class="arrow">&rarr;</span>
+        <span class="v" style="color:var(--series-other)">${r.o.toFixed(r.decimals)}${r.unit}</span>
       </div>
-      <div class="delta">BraTS-Africa delta: ${deltaTxt}</div>
-    </div>`;
-  }).join('');
+      <div class="delta">home &rarr; BraTS-Africa Glioma &rarr; Other Neoplasms</div>
+    </div>`).join('');
 
   document.getElementById('callout').innerHTML = `
-    <b>Finding:</b> WT, TC, ET, and Edema all generalize well to BraTS-Africa
-    (Dice within ~0.01&ndash;0.13 of home performance, several regions matching
-    almost exactly). <b>NCR (necrotic core) is the outlier</b> &mdash; Dice drops
-    from ${dice.home.NCR.toFixed(3)} to ${dice.africa.NCR.toFixed(3)}, HD95 rises
-    from ${hd95.home.NCR.toFixed(1)}mm to ${hd95.africa.NCR.toFixed(1)}mm, and it
-    is the only region where <b>Precision</b> (${metrics[4].home.NCR.toFixed(3)} &rarr;
-    ${metrics[4].africa.NCR.toFixed(3)}) falls much further than <b>Sensitivity</b>
-    (${metrics[3].home.NCR.toFixed(3)} &rarr; ${metrics[3].africa.NCR.toFixed(3)})
+    <b>Glioma generalization finding:</b> WT, TC, ET, and Edema all generalize well
+    to BraTS-Africa's glioma cohort (Dice within ~0.01&ndash;0.13 of home
+    performance, several regions matching almost exactly). <b>NCR (necrotic
+    core) is the outlier</b> &mdash; Dice drops from ${dice.home.NCR.toFixed(3)}
+    to ${dice.africaGlioma.NCR.toFixed(3)}, HD95 rises from
+    ${hd95.home.NCR.toFixed(1)}mm to ${hd95.africaGlioma.NCR.toFixed(1)}mm, and
+    it is the only region where <b>Precision</b>
+    (${prec.home.NCR.toFixed(3)} &rarr; ${prec.africaGlioma.NCR.toFixed(3)})
+    falls much further than <b>Sensitivity</b>
+    (${sens.home.NCR.toFixed(3)} &rarr; ${sens.africaGlioma.NCR.toFixed(3)})
     &mdash; the same precision/sensitivity imbalance shape seen during training
     before the epoch-26 NCR breakout, reappearing on a sufficiently different
     population.
   `;
+
+  document.getElementById('calloutOther').innerHTML = `
+    <b>Other Neoplasms is a different kind of test, not a harder version of the
+    same one:</b> these 51 cases are <b>non-glioma</b> brain tumors (meningiomas,
+    metastases, other CNS neoplasms) &mdash; a pathology the model was never
+    trained to segment, evaluated here only as a stress test of how far
+    performance falls outside its intended task. Every region degrades further
+    than on the glioma cohort, and NCR collapses hardest of all: Dice
+    ${dice.africaOther.NCR.toFixed(3)}, HD95 ${hd95.africaOther.NCR.toFixed(1)}mm,
+    Precision ${prec.africaOther.NCR.toFixed(3)}. Report this as an out-of-task
+    robustness check, not as part of the glioma generalization claim above.
+  `;
 }
 
 function renderChart(metric){
-  const W = 900, H = 280;
+  const W = 940, H = 280;
   const M = {top: 16, right: 18, bottom: 34, left: metric.id === 'hd95' ? 42 : 36};
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
 
-  const allVals = REGIONS.flatMap(r => [metric.home[r], metric.africa[r]]);
-  let yMax = metric.domainMax != null ? metric.domainMax : Math.max(...allVals) * 1.15;
-  let yMin = 0;
+  const allVals = REGIONS.flatMap(r => SERIES.map(s => metric[s.key][r]));
+  let yMax = metric.domainMax != null ? metric.domainMax : Math.max(...allVals) * 1.12;
   const yTicks = metric.domainMax != null
     ? [0, 0.25, 0.5, 0.75, 1.0]
     : (() => { const n=4, ticks=[]; for(let i=0;i<=n;i++) ticks.push(yMax*i/n); return ticks; })();
@@ -298,8 +341,10 @@ function renderChart(metric){
   const y = v => M.top + plotH - (v / yMax) * plotH;
 
   const groupW = plotW / REGIONS.length;
-  const barW = Math.min(34, groupW * 0.30);
-  const barGap = 4;
+  const nSeries = SERIES.length;
+  const barGap = 3;
+  const barW = Math.min(24, (groupW * 0.62 - barGap * (nSeries - 1)) / nSeries);
+  const clusterW = barW * nSeries + barGap * (nSeries - 1);
 
   const gridSvg = yTicks.map(t => `
     <line class="gridline" x1="${M.left}" x2="${W-M.right}" y1="${y(t)}" y2="${y(t)}"></line>
@@ -309,34 +354,31 @@ function renderChart(metric){
   let barsSvg = '', labelsSvg = '', catLabelsSvg = '', hoverSvg = '';
   REGIONS.forEach((region, i) => {
     const cx = M.left + groupW * i + groupW/2;
-    const hVal = metric.home[region], aVal = metric.africa[region];
-    const hX = cx - barGap/2 - barW;
-    const aX = cx + barGap/2;
-    const hY = y(hVal), aY = y(aVal);
+    const clusterStart = cx - clusterW/2;
 
-    barsSvg += `<rect class="bar" data-region="${region}" data-series="home" x="${hX}" y="${hY}" width="${barW}" height="${M.top+plotH-hY}" rx="3" fill="var(--series-home)"></rect>`;
-    barsSvg += `<rect class="bar" data-region="${region}" data-series="africa" x="${aX}" y="${aY}" width="${barW}" height="${M.top+plotH-aY}" rx="3" fill="var(--series-africa)"></rect>`;
-
-    labelsSvg += `<text class="bar-label" x="${hX+barW/2}" y="${hY-5}" text-anchor="middle">${fmt(hVal, metric.decimals)}</text>`;
-    labelsSvg += `<text class="bar-label" x="${aX+barW/2}" y="${aY-5}" text-anchor="middle">${fmt(aVal, metric.decimals)}</text>`;
+    SERIES.forEach((s, si) => {
+      const val = metric[s.key][region];
+      const bx = clusterStart + si * (barW + barGap);
+      const by = y(val);
+      barsSvg += `<rect class="bar" data-region="${region}" data-series="${s.key}" x="${bx}" y="${by}" width="${barW}" height="${M.top+plotH-by}" rx="3" fill="var(${s.colorVar})"></rect>`;
+      labelsSvg += `<text class="bar-label" x="${bx+barW/2}" y="${by-5}" text-anchor="middle">${fmt(val, metric.decimals)}</text>`;
+    });
 
     catLabelsSvg += `<text class="cat-label" x="${cx}" y="${H-12}" text-anchor="middle" font-weight="${region==='Mean'?600:400}">${region}</text>`;
-
     hoverSvg += `<rect class="hover-col" data-region="${region}" x="${M.left+groupW*i}" y="${M.top}" width="${groupW}" height="${plotH}" fill="transparent"></rect>`;
   });
+
+  const legendSvg = SERIES.map(s => `<div class="item"><span class="sw" style="background:var(${s.colorVar})"></span>${s.label}</div>`).join('');
 
   return `
   <div class="panel" id="panel-${metric.id}">
     <div class="panel-head">
       <div class="panel-title">${metric.title}<span class="dir">${metric.dirIcon}${metric.unit ? ' &middot; ' + metric.unit : ''}</span></div>
     </div>
-    <div class="legend">
-      <div class="item"><span class="sw" style="background:var(--series-home)"></span>BraTS2021 (home, epoch 70)</div>
-      <div class="item"><span class="sw" style="background:var(--series-africa)"></span>BraTS-Africa (external, n=95)</div>
-    </div>
+    <div class="legend">${legendSvg}</div>
     <div class="chart-holder" id="holder-${metric.id}">
       <svg class="chart" id="svg-${metric.id}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"
-           aria-label="${metric.title} comparison between BraTS2021 and BraTS-Africa, mean and per region">
+           aria-label="${metric.title} comparison across BraTS2021, BraTS-Africa Glioma, and BraTS-Africa Other Neoplasms, mean and per region">
         <g>${gridSvg}</g>
         <line class="baseline" x1="${M.left}" x2="${W-M.right}" y1="${M.top+plotH}" y2="${M.top+plotH}"></line>
         <g>${barsSvg}</g>
@@ -360,18 +402,16 @@ metrics.forEach(metric => {
   svg.querySelectorAll('.hover-col').forEach(col => {
     const region = col.dataset.region;
     const showTip = () => {
-      const hVal = metric.home[region], aVal = metric.africa[region];
-      tooltip.innerHTML = `
-        <div class="tt-cat">${region}</div>
-        <div class="tt-row"><span class="n"><span class="d" style="background:var(--series-home)"></span>BraTS2021</span><span class="val">${fmt(hVal, metric.decimals)}${metric.unit}</span></div>
-        <div class="tt-row"><span class="n"><span class="d" style="background:var(--series-africa)"></span>BraTS-Africa</span><span class="val">${fmt(aVal, metric.decimals)}${metric.unit}</span></div>
-      `;
+      const rows = SERIES.map(s => `
+        <div class="tt-row"><span class="n"><span class="d" style="background:var(${s.colorVar})"></span>${s.short}</span><span class="val">${fmt(metric[s.key][region], metric.decimals)}${metric.unit}</span></div>
+      `).join('');
+      tooltip.innerHTML = `<div class="tt-cat">${region}</div>${rows}`;
       tooltip.style.opacity = 1;
       const rect = col.getBoundingClientRect();
       const holderRect = holder.getBoundingClientRect();
       const localX = rect.left - holderRect.left + rect.width/2;
-      const clamped = Math.min(Math.max(localX, 78), holder.clientWidth - 78);
-      tooltip.style.left = `${clamped - 78}px`;
+      const clamped = Math.min(Math.max(localX, 84), holder.clientWidth - 84);
+      tooltip.style.left = `${clamped - 84}px`;
       tooltip.style.top = `8px`;
     };
     col.addEventListener('mouseenter', showTip);
