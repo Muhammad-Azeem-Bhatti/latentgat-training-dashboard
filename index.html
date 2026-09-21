@@ -20,6 +20,8 @@
   --series-6:    #008300; /* Edema */
   --good:        #0ca30c;
   --tile-bg:     #f3f2ee;
+  --best-accent: #b8790f;
+  --best-tile-bg:#fbf1e0;
 }
 @media (prefers-color-scheme: dark){
   :root:where(:not([data-theme="light"])){
@@ -40,6 +42,8 @@
     --series-6:     #008300;
     --good:         #0ca30c;
     --tile-bg:      #202020;
+    --best-accent:  #e3a13c;
+    --best-tile-bg: #2a2115;
   }
 }
 :root[data-theme="dark"]{
@@ -60,6 +64,8 @@
   --series-6:     #008300;
   --good:         #0ca30c;
   --tile-bg:      #202020;
+  --best-accent:  #e3a13c;
+  --best-tile-bg: #2a2115;
 }
 
 *{box-sizing:border-box;}
@@ -143,6 +149,22 @@ h1{
   font-weight: 500;
 }
 .stat .v small{ font-size: 12px; color: var(--muted); font-weight:400; }
+
+.stats.best{ margin-bottom: 14px; }
+.stats.best .stat{ background: var(--best-tile-bg); }
+.stats.best .k{ color: var(--best-accent); display:flex; align-items:center; gap:4px; }
+.stats.best .v{ color: var(--best-accent); }
+.best-strip-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--best-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
 
 .panel{
   background: var(--surface-1);
@@ -325,6 +347,9 @@ table.data-table tbody tr:last-child td{ border-bottom:none; }
 }
 .warmband{ fill: var(--series-1); opacity: 0.05; }
 .warmlabel{ font-family:'IBM Plex Mono', monospace; font-size: 10px; fill: var(--muted); }
+.best-guide{ stroke: var(--best-accent); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
+.best-star{ font-size: 13px; fill: var(--best-accent); text-anchor: middle; }
+.best-ring{ fill: none; stroke: var(--best-accent); stroke-width: 1.5; }
 
 @media (max-width: 480px){
   .panel{ padding:16px 14px 10px; }
@@ -342,6 +367,9 @@ table.data-table tbody tr:last-child td{ border-bottom:none; }
     <b><span id="subEpochCount">?</span> of 200</b> epochs<span id="subWarmupNote"></span> &mdash; values will keep shifting
     fast as the run continues.
   </p>
+
+  <div class="best-strip-label">&#9733; Best epoch so far <span id="bestEpochLabel"></span> &middot; lowest combined Dice+HD95 rank</div>
+  <div class="stats best" id="bestStatStrip"></div>
 
   <div class="stats" id="statStrip"></div>
 
@@ -463,13 +491,61 @@ const metrics = [
 // ===DATA_END===
 
 const CHART_H = 300;
-const CHART_M = {top: 16, right: 18, bottom: 26, left: 46};
+const CHART_M = {top: 26, right: 18, bottom: 26, left: 46}; // top gives room for the best-epoch star
 const POINT_SPACING = 22; // px between adjacent epochs -- keeps dots/lines legible as epoch count grows
 const CHART_MIN_W = 860;
 const CHART_W = Math.max(
   CHART_MIN_W,
   CHART_M.left + CHART_M.right + (epochs.length - 1) * POINT_SPACING
 );
+
+// Best checkpoint = lowest combined rank of Dice_Mean (higher better) +
+// HD95_Mean (lower better) -- same selection rule the training loop itself
+// uses to pick its saved "best" checkpoint, so the star matches what you'd
+// actually load, not just whichever epoch happens to have the highest Dice.
+function rankDescending(arr){
+  const order = arr.map((v,i)=>i).sort((a,b)=>arr[b]-arr[a]);
+  const rank = new Array(arr.length);
+  order.forEach((originalIdx, r) => { rank[originalIdx] = r+1; });
+  return rank;
+}
+function rankAscending(arr){
+  const order = arr.map((v,i)=>i).sort((a,b)=>arr[a]-arr[b]);
+  const rank = new Array(arr.length);
+  order.forEach((originalIdx, r) => { rank[originalIdx] = r+1; });
+  return rank;
+}
+function computeBestEpochIdx(){
+  const diceRank = rankDescending(metrics[0].series.Mean);
+  const hd95Rank = rankAscending(metrics[1].series.Mean);
+  let bestIdx = 0, bestScore = Infinity;
+  diceRank.forEach((dr, i) => {
+    const score = dr + hd95Rank[i];
+    if(score < bestScore){ bestScore = score; bestIdx = i; }
+  });
+  return bestIdx;
+}
+const BEST_EPOCH_IDX = computeBestEpochIdx();
+
+function renderBestStats(){
+  const bi = BEST_EPOCH_IDX;
+  const items = [
+    { k:'Epoch', v:`${epochs[bi]}`, sub:`/ 200` },
+    { k:'Dice Mean', v: metrics[0].series.Mean[bi].toFixed(3), sub:'' },
+    { k:'HD95 Mean', v: metrics[1].series.Mean[bi].toFixed(1), sub:'mm' },
+    { k:'NSD Mean', v: metrics[2].series.Mean[bi].toFixed(3), sub:'' },
+    { k:'Sensitivity', v: metrics[3].series.Mean[bi].toFixed(3), sub:'' },
+    { k:'Precision', v: metrics[4].series.Mean[bi].toFixed(3), sub:'' },
+    { k:'Specificity', v: metrics[5].series.Mean[bi].toFixed(3), sub:'' },
+  ];
+  document.getElementById('bestStatStrip').innerHTML = items.map(it => `
+    <div class="stat">
+      <div class="k">${it.k}</div>
+      <div class="v">${it.v}${it.sub ? ` <small>${it.sub}</small>` : ''}</div>
+    </div>
+  `).join('');
+  document.getElementById('bestEpochLabel').textContent = `(epoch ${epochs[bi]})`;
+}
 
 function renderStats(){
   const last = i => epochs.length - 1;
@@ -560,6 +636,14 @@ function renderChart(metric){
     ).join('')
   ).join('');
 
+  const bestX = x(BEST_EPOCH_IDX);
+  const bestMeanY = y(metric.series.Mean[BEST_EPOCH_IDX]);
+  const bestMarkerSvg = `
+    <line class="best-guide" x1="${bestX}" x2="${bestX}" y1="${M.top}" y2="${M.top+plotH}"></line>
+    <circle class="best-ring" cx="${bestX}" cy="${bestMeanY}" r="7"></circle>
+    <text class="best-star" x="${bestX}" y="${M.top - 12}">&#9733;</text>
+  `;
+
   const hoverCols = epochs.map((e,i) => {
     const bandLeft = i === 0 ? M.left : (x(i-1) + x(i)) / 2;
     const bandRight = i === epochs.length-1 ? W - M.right : (x(i) + x(i+1)) / 2;
@@ -596,6 +680,7 @@ function renderChart(metric){
           <g>${xLabels}</g>
           <g>${linesSvg}</g>
           <g>${dotsSvg}</g>
+          <g>${bestMarkerSvg}</g>
           <line class="crosshair" id="crosshair-${metric.id}" x1="0" x2="0" y1="${M.top}" y2="${M.top+plotH}"></line>
           <g>${hoverCols}</g>
         </svg>
@@ -613,6 +698,7 @@ function renderChart(metric){
 
 document.getElementById('charts').innerHTML = metrics.map(renderChart).join('');
 renderStats();
+renderBestStats();
 
 metrics.forEach(metric => {
   const svg = document.getElementById(`svg-${metric.id}`);
