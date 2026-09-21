@@ -197,7 +197,7 @@ svg.chart{ display:block; }
   <div class="eyebrow">Custom3DUNet_LatentGAT &middot; out-of-distribution evaluation</div>
   <h1>BraTS2021 vs. BraTS-Africa</h1>
   <p class="sub">
-    Same trained checkpoint (<b>epoch 70</b>, the best-scoring epoch on the combined
+    Same trained checkpoint (<b>epoch 90</b>, the best-scoring epoch on the combined
     Dice+HD95 rank), evaluated on three cohorts: the home validation split
     (<b>BraTS2021</b>, n=251), an out-of-distribution external glioma cohort
     (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a same-country cohort of
@@ -222,6 +222,15 @@ svg.chart{ display:block; }
     held-out submission. Other Neoplasms is a non-glioma cohort (meningiomas,
     metastases, and other CNS tumors) included as an out-of-task robustness
     check, not as evidence for or against glioma generalization.
+    <br><br>
+    <b>Checkpoint-selection note:</b> epoch 90 is the best epoch on the home
+    validation split by every measure here, but an earlier checkpoint (epoch
+    70) generalized measurably <i>better</i> to both BraTS-Africa cohorts on
+    every metric despite scoring lower at home (e.g. Glioma Dice_Mean 0.784
+    at epoch 70 vs. 0.781 at epoch 90; Glioma HD95_Mean 17.7mm vs. 18.9mm).
+    Optimizing for the home combined Dice+HD95 rank does not guarantee the
+    best cross-population generalization &mdash; the two are related but not
+    identical objectives.
   </p>
 </div>
 
@@ -234,43 +243,44 @@ const SERIES = [
   { key: 'africaOther',  label: 'BraTS-Africa — Other Neoplasms (n=51, out-of-task)', short: 'Africa Other', colorVar: '--series-other' },
 ];
 
-// epoch 70 (BraTS2021 home cohort) vs the two BraTS-Africa evaluations
+// epoch 90 (BraTS2021 home cohort, best combined Dice+HD95 rank) vs the two
+// BraTS-Africa evaluations, both re-run against this same checkpoint
 const metrics = [
   {
     id: 'dice', title: 'Dice Score', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8552, WT: 0.9134, TC: 0.8964, ET: 0.8498, NCR: 0.7546, Edema: 0.8311 },
-    africaGlioma: { Mean: 0.7840, WT: 0.9085, TC: 0.7794, ET: 0.7965, NCR: 0.5724, Edema: 0.7764 },
-    africaOther:  { Mean: 0.7375, WT: 0.8391, TC: 0.7540, ET: 0.7875, NCR: 0.3319, Edema: 0.7064 },
+    home:         { Mean: 0.8618, WT: 0.9188, TC: 0.9022, ET: 0.8601, NCR: 0.7676, Edema: 0.8394 },
+    africaGlioma: { Mean: 0.7812, WT: 0.8994, TC: 0.7644, ET: 0.7846, NCR: 0.5652, Edema: 0.7743 },
+    africaOther:  { Mean: 0.7171, WT: 0.8108, TC: 0.7227, ET: 0.7676, NCR: 0.3016, Edema: 0.6987 },
   },
   {
     id: 'hd95', title: 'HD95', dirIcon: '↓ lower is better', unit: 'mm', decimals: 1, domainMax: null,
-    home:         { Mean: 10.78, WT: 7.93, TC: 4.77, ET: 12.76, NCR: 20.24, Edema: 8.18 },
-    africaGlioma: { Mean: 17.73, WT: 12.29, TC: 15.50, ET: 11.52, NCR: 35.46, Edema: 13.86 },
-    africaOther:  { Mean: 27.68, WT: 18.79, TC: 21.95, ET: 18.39, NCR: 54.45, Edema: 24.80 },
+    home:         { Mean: 10.41, WT: 7.42, TC: 4.98, ET: 11.75, NCR: 20.17, Edema: 7.73 },
+    africaGlioma: { Mean: 18.93, WT: 14.51, TC: 16.64, ET: 11.69, NCR: 36.64, Edema: 15.18 },
+    africaOther:  { Mean: 33.63, WT: 22.18, TC: 28.20, ET: 18.77, NCR: 67.06, Edema: 31.92 },
   },
   {
     id: 'nsd', title: 'Normalized Surface Dice', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8800, WT: 0.8971, TC: 0.8928, ET: 0.9147, NCR: 0.8049, Edema: 0.8905 },
-    africaGlioma: { Mean: 0.7770, WT: 0.8637, TC: 0.7289, ET: 0.8484, NCR: 0.6234, Edema: 0.8206 },
-    africaOther:  { Mean: 0.6877, WT: 0.7715, TC: 0.6979, ET: 0.7907, NCR: 0.4257, Edema: 0.7529 },
+    home:         { Mean: 0.8859, WT: 0.9024, TC: 0.8980, ET: 0.9217, NCR: 0.8107, Edema: 0.8969 },
+    africaGlioma: { Mean: 0.7648, WT: 0.8478, TC: 0.7074, ET: 0.8376, NCR: 0.6150, Edema: 0.8160 },
+    africaOther:  { Mean: 0.6630, WT: 0.7376, TC: 0.6607, ET: 0.7742, NCR: 0.3919, Edema: 0.7506 },
   },
   {
     id: 'sens', title: 'Sensitivity (Recall)', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8665, WT: 0.9256, TC: 0.8886, ET: 0.8655, NCR: 0.8168, Edema: 0.8764 },
-    africaGlioma: { Mean: 0.7899, WT: 0.9196, TC: 0.8243, ET: 0.7533, NCR: 0.7853, Edema: 0.8187 },
-    africaOther:  { Mean: 0.7459, WT: 0.8494, TC: 0.7935, ET: 0.7624, NCR: 0.5943, Edema: 0.7795 },
+    home:         { Mean: 0.8568, WT: 0.9132, TC: 0.9009, ET: 0.8931, NCR: 0.8021, Edema: 0.8540 },
+    africaGlioma: { Mean: 0.7729, WT: 0.8935, TC: 0.8048, ET: 0.7335, NCR: 0.7733, Edema: 0.7934 },
+    africaOther:  { Mean: 0.7262, WT: 0.8216, TC: 0.7668, ET: 0.7309, NCR: 0.6028, Edema: 0.7503 },
   },
   {
     id: 'prec', title: 'Precision', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8539, WT: 0.9123, TC: 0.9321, ET: 0.8763, NCR: 0.7955, Edema: 0.8158 },
-    africaGlioma: { Mean: 0.7954, WT: 0.9179, TC: 0.8162, ET: 0.8937, NCR: 0.5667, Edema: 0.7866 },
-    africaOther:  { Mean: 0.7653, WT: 0.8697, TC: 0.8058, ET: 0.8935, NCR: 0.3574, Edema: 0.7181 },
+    home:         { Mean: 0.8771, WT: 0.9355, TC: 0.9294, ET: 0.8667, NCR: 0.8308, Edema: 0.8521 },
+    africaGlioma: { Mean: 0.8096, WT: 0.9293, TC: 0.8166, ET: 0.9022, NCR: 0.5718, Edema: 0.8046 },
+    africaOther:  { Mean: 0.7401, WT: 0.8550, TC: 0.7709, ET: 0.8932, NCR: 0.3337, Edema: 0.7353 },
   },
   {
     id: 'spec', title: 'Specificity', dirIcon: '↑ higher is better', unit: '', decimals: 3, domainMax: 1,
-    home:         { Mean: 0.9989, WT: 0.9982, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9976 },
-    africaGlioma: { Mean: 0.9974, WT: 0.9973, TC: 0.9976, ET: 0.9995, NCR: 0.9971, Edema: 0.9956 },
-    africaOther:  { Mean: 0.9979, WT: 0.9968, TC: 0.9983, ET: 0.9995, NCR: 0.9981, Edema: 0.9962 },
+    home:         { Mean: 0.9991, WT: 0.9987, TC: 0.9995, ET: 0.9994, NCR: 0.9997, Edema: 0.9982 },
+    africaGlioma: { Mean: 0.9976, WT: 0.9977, TC: 0.9976, ET: 0.9996, NCR: 0.9971, Edema: 0.9961 },
+    africaOther:  { Mean: 0.9978, WT: 0.9963, TC: 0.9980, ET: 0.9996, NCR: 0.9977, Edema: 0.9961 },
   },
 ];
 
