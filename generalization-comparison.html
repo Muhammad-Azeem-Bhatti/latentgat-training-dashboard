@@ -197,13 +197,14 @@ svg.chart{ display:block; }
   <div class="eyebrow">Custom3DUNet_LatentGAT &middot; out-of-distribution evaluation</div>
   <h1>BraTS2021 vs. BraTS-Africa</h1>
   <p class="sub">
-    Same trained checkpoint (<b>epoch 140</b>, the best-scoring epoch on the combined
-    Dice+HD95 rank), evaluated on three cohorts: the home validation split
-    (<b>BraTS2021</b>, n=251), an out-of-distribution external glioma cohort
-    (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a same-country cohort of
-    <b>non-glioma</b> brain tumors (<b>BraTS-Africa &mdash; Other Neoplasms</b>, n=51)
-    the model was never trained to segment. Same <code>evaluate_full_metrics</code>
-    pipeline, same 4-view TTA, same post-processing settings for all three.
+    Same trained checkpoint (<b>epoch 156</b>, the best epoch on the combined
+    Dice+HD95 rank across all 200 epochs), evaluated on three cohorts: the home
+    validation split (<b>BraTS2021</b>, n=251), an out-of-distribution external
+    glioma cohort (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a cohort of
+    <b>non-glioma</b> neoplasms from the same source
+    (<b>BraTS-Africa &mdash; Other Neoplasms</b>, n=51) that the model was never
+    trained to segment. See the comparability note below before comparing home
+    and external numbers directly.
   </p>
 
   <div class="stats" id="statStrip"></div>
@@ -218,24 +219,30 @@ svg.chart{ display:block; }
     millimeters (lower is better). "Mean" is the arithmetic mean of the five
     sub-region scores, matching the training dashboard's convention. Both
     BraTS-Africa cohorts' labels are public (TCIA-hosted); BraTS2021 numbers
-    come from the tracked epoch-70 validation checkpoint, not a separate
-    held-out submission. Other Neoplasms is a non-glioma cohort (meningiomas,
-    metastases, and other CNS tumors) included as an out-of-task robustness
-    check, not as evidence for or against glioma generalization.
+    come from the epoch-156 per-epoch validation pass, not a separate held-out
+    submission. Other Neoplasms is a non-glioma cohort included as an
+    out-of-task robustness check, not as evidence for or against glioma
+    generalization.
     <br><br>
-    <b>Checkpoint-selection note:</b> three checkpoints have now been tested
-    externally (epochs 70, 90, 140), and the relationship between home-cohort
-    rank and external generalization isn't monotonic. Epoch 90 &mdash; better
-    than epoch 70 at home &mdash; generalized <i>worse</i> to both BraTS-Africa
-    cohorts on every metric. Epoch 140 &mdash; the current home-cohort best,
-    and better than epoch 90 at home too &mdash; recovers most of that
-    external ground (Glioma Dice_Mean 0.791 vs. epoch 90's 0.781, back near
-    epoch 70's 0.784; Other Neoplasms Dice_Mean 0.723 vs. epoch 90's 0.717,
-    also the best of the three), though its Glioma HD95_Mean (18.6mm) still
-    trails epoch 70's (17.7mm). Net read: home-cohort combined-rank selection
-    correlates with but does not guarantee the best external generalization
-    at every checkpoint &mdash; worth reporting as its own finding rather than
-    assuming later epochs are strictly better all round.
+    <b>Comparability note:</b> the home values are the per-epoch validation
+    pass, which runs without test-time augmentation. The external runs use
+    <code>evaluate_full_metrics</code> on the same checkpoint; if their TTA
+    setting differs from the home pass, the home-vs-external gap is over- or
+    understated by that difference.
+    <br><br>
+    <b>Checkpoint-selection note:</b> four checkpoints have now been tested
+    externally (epochs 70, 90, 140, 156), and home-cohort rank does not predict
+    external generalization monotonically. Epoch 90, better than epoch 70 at
+    home, generalized <i>worse</i> to both BraTS-Africa cohorts on every
+    headline metric. Epoch 156, the selected checkpoint, has the best Glioma
+    Dice_Mean (0.795 vs. 0.784 / 0.781 / 0.791 for epochs 70 / 90 / 140) and
+    the best Glioma HD95_Mean (17.5mm vs. 17.7 / 18.9 / 18.6), but its Glioma
+    NSD_Mean (0.773) sits slightly below epochs 70 and 140 (0.777, 0.775); on
+    Other Neoplasms it ranks second on Dice and HD95, behind epoch 70. The
+    differences between the top checkpoints (about 0.01 Dice, 1.5mm HD95) are
+    small next to the per-case spread (Dice std about 0.16), so external
+    results should be reported for the selected checkpoint rather than
+    cherry-picked across epochs.
   </p>
 </div>
 
@@ -243,49 +250,49 @@ svg.chart{ display:block; }
 const REGIONS = ["Mean", "WT", "TC", "ET", "NCR", "Edema"];
 
 const SERIES = [
-  { key: 'home',         label: 'BraTS2021 (home, epoch 70)',                    short: 'BraTS2021',    colorVar: '--series-home' },
+  { key: 'home',         label: 'BraTS2021 (home, epoch 156)',                   short: 'BraTS2021',    colorVar: '--series-home' },
   { key: 'africaGlioma', label: 'BraTS-Africa — Glioma (n=95)',              short: 'Africa Glioma', colorVar: '--series-africa' },
   { key: 'africaOther',  label: 'BraTS-Africa — Other Neoplasms (n=51, out-of-task)', short: 'Africa Other', colorVar: '--series-other' },
 ];
 
-// epoch 140 (BraTS2021 home cohort, best combined Dice+HD95 rank) vs the two
-// BraTS-Africa evaluations, both re-run against this same checkpoint
+// epoch 156 (BraTS2021 home cohort, best combined Dice+HD95 rank over all 200 epochs) vs the two
+// BraTS-Africa evaluations, both run against this same checkpoint
 const metrics = [
   {
     id: 'dice', title: 'Dice Score', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8659, WT: 0.9224, TC: 0.9048, ET: 0.8618, NCR: 0.7725, Edema: 0.8438 },
-    africaGlioma: { Mean: 0.7910, WT: 0.9049, TC: 0.7843, ET: 0.7987, NCR: 0.5592, Edema: 0.7835 },
-    africaOther:  { Mean: 0.7230, WT: 0.8133, TC: 0.7587, ET: 0.7717, NCR: 0.3036, Edema: 0.6985 },
+    home:         { Mean: 0.8654, WT: 0.9225, TC: 0.9030, ET: 0.8636, NCR: 0.7677, Edema: 0.8449 },
+    africaGlioma: { Mean: 0.7949, WT: 0.9098, TC: 0.7866, ET: 0.7703, NCR: 0.5671, Edema: 0.7917 },
+    africaOther:  { Mean: 0.7298, WT: 0.8183, TC: 0.7321, ET: 0.7247, NCR: 0.3259, Edema: 0.7074 },
   },
   {
     id: 'hd95', title: 'HD95', dirIcon: '↓ lower is better', unit: 'mm', decimals: 1, domainMax: null,
-    home:         { Mean: 10.07, WT: 6.77, TC: 4.86, ET: 12.84, NCR: 18.80, Edema: 7.07 },
-    africaGlioma: { Mean: 18.55, WT: 14.78, TC: 15.55, ET: 11.34, NCR: 36.25, Edema: 14.85 },
-    africaOther:  { Mean: 29.39, WT: 28.08, TC: 16.90, ET: 18.98, NCR: 50.48, Edema: 32.49 },
+    home:         { Mean: 9.12, WT: 7.08, TC: 4.43, ET: 10.96, NCR: 15.92, Edema: 7.19 },
+    africaGlioma: { Mean: 17.48, WT: 12.46, TC: 14.76, ET: 11.37, NCR: 35.23, Edema: 13.58 },
+    africaOther:  { Mean: 28.97, WT: 20.83, TC: 23.30, ET: 26.48, NCR: 48.81, Edema: 25.43 },
   },
   {
     id: 'nsd', title: 'Normalized Surface Dice', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8915, WT: 0.9083, TC: 0.9043, ET: 0.9232, NCR: 0.8200, Edema: 0.9016 },
-    africaGlioma: { Mean: 0.7752, WT: 0.8591, TC: 0.7352, ET: 0.8515, NCR: 0.6050, Edema: 0.8252 },
-    africaOther:  { Mean: 0.6700, WT: 0.7425, TC: 0.6968, ET: 0.7783, NCR: 0.3851, Edema: 0.7472 },
+    home:         { Mean: 0.8915, WT: 0.9079, TC: 0.9035, ET: 0.9256, NCR: 0.8191, Edema: 0.9014 },
+    africaGlioma: { Mean: 0.7732, WT: 0.8662, TC: 0.7338, ET: 0.8235, NCR: 0.6144, Edema: 0.8283 },
+    africaOther:  { Mean: 0.6599, WT: 0.7506, TC: 0.6619, ET: 0.7241, NCR: 0.4137, Edema: 0.7494 },
   },
   {
     id: 'sens', title: 'Sensitivity (Recall)', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8684, WT: 0.9248, TC: 0.9105, ET: 0.9032, NCR: 0.8101, Edema: 0.8641 },
-    africaGlioma: { Mean: 0.7887, WT: 0.9067, TC: 0.8481, ET: 0.7693, NCR: 0.7852, Edema: 0.7986 },
-    africaOther:  { Mean: 0.7409, WT: 0.8344, TC: 0.7868, ET: 0.7479, NCR: 0.5788, Edema: 0.7650 },
+    home:         { Mean: 0.8745, WT: 0.9322, TC: 0.9030, ET: 0.8872, NCR: 0.8220, Edema: 0.8787 },
+    africaGlioma: { Mean: 0.7903, WT: 0.9086, TC: 0.8007, ET: 0.6984, NCR: 0.7828, Edema: 0.8289 },
+    africaOther:  { Mean: 0.7375, WT: 0.8273, TC: 0.7446, ET: 0.7029, NCR: 0.6091, Edema: 0.7874 },
   },
   {
     id: 'prec', title: 'Precision', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8724, WT: 0.9297, TC: 0.9243, ET: 0.8601, NCR: 0.8386, Edema: 0.8489 },
-    africaGlioma: { Mean: 0.8117, WT: 0.9254, TC: 0.8053, ET: 0.8863, NCR: 0.5444, Edema: 0.8158 },
-    africaOther:  { Mean: 0.7592, WT: 0.8510, TC: 0.7971, ET: 0.8836, NCR: 0.3060, Edema: 0.7296 },
+    home:         { Mean: 0.8649, WT: 0.9223, TC: 0.9286, ET: 0.8773, NCR: 0.8154, Edema: 0.8366 },
+    africaGlioma: { Mean: 0.8162, WT: 0.9309, TC: 0.8386, ET: 0.9100, NCR: 0.5579, Edema: 0.8005 },
+    africaOther:  { Mean: 0.7640, WT: 0.8552, TC: 0.8093, ET: 0.8753, NCR: 0.3339, Edema: 0.7200 },
   },
   {
     id: 'spec', title: 'Specificity', dirIcon: '↑ higher is better', unit: '', decimals: 3, domainMax: 1,
-    home:         { Mean: 0.9990, WT: 0.9986, TC: 0.9994, ET: 0.9994, NCR: 0.9996, Edema: 0.9981 },
-    africaGlioma: { Mean: 0.9976, WT: 0.9974, TC: 0.9976, ET: 0.9994, NCR: 0.9969, Edema: 0.9963 },
-    africaOther:  { Mean: 0.9977, WT: 0.9959, TC: 0.9981, ET: 0.9995, NCR: 0.9978, Edema: 0.9957 },
+    home:         { Mean: 0.9990, WT: 0.9984, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9978 },
+    africaGlioma: { Mean: 0.9976, WT: 0.9977, TC: 0.9984, ET: 0.9996, NCR: 0.9975, Edema: 0.9957 },
+    africaOther:  { Mean: 0.9979, WT: 0.9965, TC: 0.9988, ET: 0.9997, NCR: 0.9984, Edema: 0.9958 },
   },
 ];
 
@@ -313,25 +320,27 @@ function renderStats(){
     </div>`).join('');
 
   document.getElementById('callout').innerHTML = `
-    <b>Glioma generalization finding:</b> WT, TC, ET, and Edema all generalize well
-    to BraTS-Africa's glioma cohort (Dice within ~0.01&ndash;0.13 of home
-    performance, several regions matching almost exactly). <b>NCR (necrotic
-    core) is the outlier</b> &mdash; Dice drops from ${dice.home.NCR.toFixed(3)}
-    to ${dice.africaGlioma.NCR.toFixed(3)}, HD95 rises from
-    ${hd95.home.NCR.toFixed(1)}mm to ${hd95.africaGlioma.NCR.toFixed(1)}mm, and
-    it is the only region where <b>Precision</b>
+    <b>Glioma generalization finding:</b> whole tumor generalizes almost
+    perfectly (Dice ${dice.home.WT.toFixed(3)} &rarr; ${dice.africaGlioma.WT.toFixed(3)});
+    TC, ET, and Edema each lose roughly 0.05&ndash;0.12 Dice.
+    <b>NCR (necrotic core) is the outlier</b> &mdash; Dice drops from
+    ${dice.home.NCR.toFixed(3)} to ${dice.africaGlioma.NCR.toFixed(3)}, HD95 rises
+    from ${hd95.home.NCR.toFixed(1)}mm to ${hd95.africaGlioma.NCR.toFixed(1)}mm,
+    and its <b>Precision</b>
     (${prec.home.NCR.toFixed(3)} &rarr; ${prec.africaGlioma.NCR.toFixed(3)})
-    falls much further than <b>Sensitivity</b>
+    falls far further than its <b>Sensitivity</b>
     (${sens.home.NCR.toFixed(3)} &rarr; ${sens.africaGlioma.NCR.toFixed(3)})
     &mdash; the same precision/sensitivity imbalance shape seen during training
-    before the epoch-26 NCR breakout, reappearing on a sufficiently different
-    population.
+    before the epoch-26 NCR breakout. ET shows the opposite pattern:
+    Sensitivity falls from ${sens.home.ET.toFixed(3)} to
+    ${sens.africaGlioma.ET.toFixed(3)} while Precision rises, i.e.
+    under-segmentation rather than over-segmentation.
   `;
 
   document.getElementById('calloutOther').innerHTML = `
     <b>Other Neoplasms is a different kind of test, not a harder version of the
-    same one:</b> these 51 cases are <b>non-glioma</b> brain tumors (meningiomas,
-    metastases, other CNS neoplasms) &mdash; a pathology the model was never
+    same one:</b> these 51 cases are <b>non-glioma</b> neoplasms
+    &mdash; a pathology the model was never
     trained to segment, evaluated here only as a stress test of how far
     performance falls outside its intended task. Every region degrades further
     than on the glioma cohort, and NCR collapses hardest of all: Dice
