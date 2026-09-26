@@ -203,8 +203,8 @@ svg.chart{ display:block; }
     glioma cohort (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a cohort of
     <b>non-glioma</b> neoplasms from the same source
     (<b>BraTS-Africa &mdash; Other Neoplasms</b>, n=51) that the model was never
-    trained to segment. See the comparability note below before comparing home
-    and external numbers directly.
+    trained to segment. All three evaluations use identical inference settings
+    (see the note below), so home and external numbers are directly comparable.
   </p>
 
   <div class="stats" id="statStrip"></div>
@@ -219,17 +219,17 @@ svg.chart{ display:block; }
     millimeters (lower is better). "Mean" is the arithmetic mean of the five
     sub-region scores, matching the training dashboard's convention. Both
     BraTS-Africa cohorts' labels are public (TCIA-hosted); BraTS2021 numbers
-    come from the epoch-156 per-epoch validation pass, not a separate held-out
-    submission. Other Neoplasms is a non-glioma cohort included as an
+    come from a dedicated evaluation of the epoch-156 checkpoint on the home
+    validation split, not a separate held-out submission. Other Neoplasms is a non-glioma cohort included as an
     out-of-task robustness check, not as evidence for or against glioma
     generalization.
     <br><br>
-    <b>Comparability note:</b> the home values are the epoch-156 per-epoch
-    validation pass, run without test-time augmentation. The two BraTS-Africa
-    evaluations of the same checkpoint used 4-view TTA (identity plus one flip
-    per axis). TTA typically helps slightly, so the home-vs-external gap shown
-    here is, if anything, slightly understated; a home run with matching TTA
-    would remove the mismatch.
+    <b>Inference settings (identical for all three cohorts):</b> sliding-window
+    overlap 0.625 with constant blending, 4-view test-time augmentation
+    (identity plus one flip per axis), and no post-processing. For reference,
+    the same checkpoint without TTA scores Dice_Mean 0.8654, HD95_Mean 9.12mm and
+    NSD_Mean 0.8915 on the home split (the per-epoch training-validation pass);
+    TTA adds about 0.003 Dice and removes about 0.45mm of HD95.
     <br><br>
     <b>Checkpoint-selection note:</b> four checkpoints have now been tested
     externally (epochs 70, 90, 140, 156; compared here assuming the same
@@ -262,37 +262,37 @@ const SERIES = [
 const metrics = [
   {
     id: 'dice', title: 'Dice Score', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8654, WT: 0.9225, TC: 0.9030, ET: 0.8636, NCR: 0.7677, Edema: 0.8449 },
+    home:         { Mean: 0.8686, WT: 0.9245, TC: 0.9057, ET: 0.8693, NCR: 0.7707, Edema: 0.8488 },
     africaGlioma: { Mean: 0.7949, WT: 0.9098, TC: 0.7866, ET: 0.7703, NCR: 0.5671, Edema: 0.7917 },
     africaOther:  { Mean: 0.7298, WT: 0.8183, TC: 0.7321, ET: 0.7247, NCR: 0.3259, Edema: 0.7074 },
   },
   {
     id: 'hd95', title: 'HD95', dirIcon: '↓ lower is better', unit: 'mm', decimals: 1, domainMax: null,
-    home:         { Mean: 9.12, WT: 7.08, TC: 4.43, ET: 10.96, NCR: 15.92, Edema: 7.19 },
+    home:         { Mean: 8.67, WT: 6.86, TC: 4.35, ET: 9.53, NCR: 15.88, Edema: 6.71 },
     africaGlioma: { Mean: 17.48, WT: 12.46, TC: 14.76, ET: 11.37, NCR: 35.23, Edema: 13.58 },
     africaOther:  { Mean: 28.97, WT: 20.83, TC: 23.30, ET: 26.48, NCR: 48.81, Edema: 25.43 },
   },
   {
     id: 'nsd', title: 'Normalized Surface Dice', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8915, WT: 0.9079, TC: 0.9035, ET: 0.9256, NCR: 0.8191, Edema: 0.9014 },
+    home:         { Mean: 0.8944, WT: 0.9111, TC: 0.9055, ET: 0.9304, NCR: 0.8201, Edema: 0.9048 },
     africaGlioma: { Mean: 0.7732, WT: 0.8662, TC: 0.7338, ET: 0.8235, NCR: 0.6144, Edema: 0.8283 },
     africaOther:  { Mean: 0.6599, WT: 0.7506, TC: 0.6619, ET: 0.7241, NCR: 0.4137, Edema: 0.7494 },
   },
   {
     id: 'sens', title: 'Sensitivity (Recall)', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8745, WT: 0.9322, TC: 0.9030, ET: 0.8872, NCR: 0.8220, Edema: 0.8787 },
+    home:         { Mean: 0.8757, WT: 0.9320, TC: 0.9053, ET: 0.8894, NCR: 0.8199, Edema: 0.8802 },
     africaGlioma: { Mean: 0.7903, WT: 0.9086, TC: 0.8007, ET: 0.6984, NCR: 0.7828, Edema: 0.8289 },
     africaOther:  { Mean: 0.7375, WT: 0.8273, TC: 0.7446, ET: 0.7029, NCR: 0.6091, Edema: 0.7874 },
   },
   {
     id: 'prec', title: 'Precision', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
-    home:         { Mean: 0.8649, WT: 0.9223, TC: 0.9286, ET: 0.8773, NCR: 0.8154, Edema: 0.8366 },
+    home:         { Mean: 0.8702, WT: 0.9267, TC: 0.9326, ET: 0.8842, NCR: 0.8196, Edema: 0.8431 },
     africaGlioma: { Mean: 0.8162, WT: 0.9309, TC: 0.8386, ET: 0.9100, NCR: 0.5579, Edema: 0.8005 },
     africaOther:  { Mean: 0.7640, WT: 0.8552, TC: 0.8093, ET: 0.8753, NCR: 0.3339, Edema: 0.7200 },
   },
   {
     id: 'spec', title: 'Specificity', dirIcon: '↑ higher is better', unit: '', decimals: 3, domainMax: 1,
-    home:         { Mean: 0.9990, WT: 0.9984, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9978 },
+    home:         { Mean: 0.9990, WT: 0.9985, TC: 0.9995, ET: 0.9995, NCR: 0.9996, Edema: 0.9979 },
     africaGlioma: { Mean: 0.9976, WT: 0.9977, TC: 0.9984, ET: 0.9996, NCR: 0.9975, Edema: 0.9957 },
     africaOther:  { Mean: 0.9979, WT: 0.9965, TC: 0.9988, ET: 0.9997, NCR: 0.9984, Edema: 0.9958 },
   },
