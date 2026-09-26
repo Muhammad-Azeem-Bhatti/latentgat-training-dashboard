@@ -224,14 +224,16 @@ svg.chart{ display:block; }
     out-of-task robustness check, not as evidence for or against glioma
     generalization.
     <br><br>
-    <b>Comparability note:</b> the home values are the per-epoch validation
-    pass, which runs without test-time augmentation. The external runs use
-    <code>evaluate_full_metrics</code> on the same checkpoint; if their TTA
-    setting differs from the home pass, the home-vs-external gap is over- or
-    understated by that difference.
+    <b>Comparability note:</b> the home values are the epoch-156 per-epoch
+    validation pass, run without test-time augmentation. The two BraTS-Africa
+    evaluations of the same checkpoint used 4-view TTA (identity plus one flip
+    per axis). TTA typically helps slightly, so the home-vs-external gap shown
+    here is, if anything, slightly understated; a home run with matching TTA
+    would remove the mismatch.
     <br><br>
     <b>Checkpoint-selection note:</b> four checkpoints have now been tested
-    externally (epochs 70, 90, 140, 156), and home-cohort rank does not predict
+    externally (epochs 70, 90, 140, 156; compared here assuming the same
+    evaluation settings across those runs), and home-cohort rank does not predict
     external generalization monotonically. Epoch 90, better than epoch 70 at
     home, generalized <i>worse</i> to both BraTS-Africa cohorts on every
     headline metric. Epoch 156, the selected checkpoint, has the best Glioma
