@@ -17,6 +17,7 @@
   --series-other: #1baf7a;  /* BraTS-Africa Other Neoplasms -- reference palette slot 3 */
   --series-ucsf:  #eda100;  /* UCSF-PDGM (clean) -- reference palette slot 4 */
   --series-ucsf-all: #e87ba4; /* UCSF-PDGM (whole, diagnostic) -- reference palette slot 5 */
+  --series-egd: #4a8f29;    /* EGD -- not yet evaluated, table entry only */
   --good:        #0ca30c;
   --tile-bg:     #f3f2ee;
   --callout-bg:  #fdf3ee;
@@ -42,6 +43,7 @@
     --series-other: #199e70;
     --series-ucsf:  #c98500;
     --series-ucsf-all: #d55181;
+    --series-egd:   #6ab84a;
     --good:         #0ca30c;
     --tile-bg:      #202020;
     --callout-bg:   #241a15;
@@ -67,6 +69,7 @@
   --series-other: #199e70;
   --series-ucsf:  #c98500;
   --series-ucsf-all: #d55181;
+  --series-egd:   #6ab84a;
   --good:         #0ca30c;
   --tile-bg:      #202020;
   --callout-bg:   #241a15;
@@ -159,6 +162,20 @@ table.ra th:first-child, table.ra td:first-child{ text-align:left; }
 table.ra td{ text-align:right; padding:6px 8px; border-bottom:1px solid var(--grid); font-family:'IBM Plex Mono', monospace; }
 table.ra tr.grp td{ font-family:'IBM Plex Sans', sans-serif; font-weight:600; color: var(--text-primary); text-align:left; padding-top:12px; border-bottom:1px solid var(--baseline); }
 table.ra .sw{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; }
+.ds-wrap{ background: var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:28px; overflow-x:auto; }
+.ds-wrap h2{ font-family:'Newsreader', Georgia, serif; font-size:19px; font-weight:600; margin:0 0 4px; }
+.ds-wrap p.lede{ font-size:13px; color: var(--text-secondary); margin:0 0 14px; max-width: 660px; line-height:1.55; }
+table.ds{ border-collapse:collapse; width:100%; min-width:760px; font-size:13px; }
+table.ds th{ text-align:left; font-weight:500; color: var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.05em; padding:6px 10px 8px 0; border-bottom:1px solid var(--baseline); }
+table.ds td{ text-align:left; padding:12px 10px 12px 0; border-bottom:1px solid var(--grid); vertical-align:top; line-height:1.5; }
+table.ds td:first-child, table.ds th:first-child{ padding-left:0; }
+table.ds .ds-name{ font-family:'IBM Plex Sans', sans-serif; font-weight:600; color: var(--text-primary); white-space:nowrap; }
+table.ds .ds-n{ font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; white-space:nowrap; }
+table.ds .ds-note{ color: var(--text-secondary); font-size:12.5px; }
+table.ds .sw{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:7px; flex-shrink:0; }
+table.ds .sw2{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:3px; flex-shrink:0; }
+table.ds .ds-namewrap{ display:flex; align-items:baseline; }
+table.ds .unpublished{ font-style: italic; color: var(--muted); }
 .panel{
   background: var(--surface-1);
   border: 1px solid var(--border);
@@ -234,6 +251,62 @@ svg.chart{ display:block; }
   </p>
 
   <div class="stats" id="statStrip"></div>
+
+  <div class="ds-wrap">
+    <h2>What each cohort is</h2>
+    <p class="lede">
+      "External" here means genuinely different acquisition conditions, not just held-out
+      patients from the same source &mdash; the table below is what makes that claim checkable.
+    </p>
+    <table class="ds">
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>n</th>
+          <th>Tumor type</th>
+          <th>What makes it a domain shift</th>
+          <th>Role here</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ds-name"><span class="ds-namewrap"><span class="sw" style="background:var(--series-home)"></span>BraTS2021</span></td>
+          <td class="ds-n">251</td>
+          <td>Glioma <span class="ds-note">(grade not published post-2020)</span></td>
+          <td class="ds-note">&mdash; reference distribution, the model's own training source</td>
+          <td class="ds-note">Home validation split</td>
+        </tr>
+        <tr>
+          <td class="ds-name"><span class="ds-namewrap"><span class="sw" style="background:var(--series-africa)"></span>BraTS-Africa &mdash; Glioma</span></td>
+          <td class="ds-n">95</td>
+          <td>Glioma <span class="ds-note">(grade not stated in source paper)</span></td>
+          <td class="ds-note">Different consortium and Sub-Saharan African clinical sites, lower-resolution scanners, suspected higher rates of gliomatosis cerebri</td>
+          <td class="ds-note">External glioma validation</td>
+        </tr>
+        <tr>
+          <td class="ds-name"><span class="ds-namewrap"><span class="sw" style="background:var(--series-other)"></span>BraTS-Africa &mdash; Other Neoplasms</span></td>
+          <td class="ds-n">51</td>
+          <td class="ds-note">Non-glioma <span class="unpublished">(N/A)</span></td>
+          <td class="ds-note">Same SSA sites and scanners as above, but a tumor class the model was never trained to segment</td>
+          <td class="ds-note">Out-of-task robustness check</td>
+        </tr>
+        <tr>
+          <td class="ds-name"><span class="ds-namewrap"><span class="sw2" style="background:var(--series-ucsf)"></span><span class="sw2" style="background:var(--series-ucsf-all)"></span>&nbsp;UCSF-PDGM</span></td>
+          <td class="ds-n">239 / 494</td>
+          <td>Glioma, WHO grade <b>II&ndash;IV</b> <span class="ds-note">(confirmed both LGG and HGG)</span></td>
+          <td class="ds-note">Different institution (UCSF) and acquisition protocol; broader grade range, including low-grade cases BraTS2021 may underrepresent</td>
+          <td class="ds-note">External validation (clean, n=239) + leakage diagnostic (whole, n=494)</td>
+        </tr>
+        <tr>
+          <td class="ds-name"><span class="ds-namewrap"><span class="sw" style="background:var(--series-egd)"></span>EGD <span class="unpublished">(pending)</span></span></td>
+          <td class="ds-n">&asymp;374<span class="ds-note">&nbsp;of 781</span></td>
+          <td>Glioma, WHO grade documented <span class="ds-note">(per EGD's published dataset description)</span></td>
+          <td class="ds-note">Third institution (Erasmus MC, Netherlands), different national healthcare system and scanner fleet; only the ~374 manually-segmented subjects are usable as ground truth, the rest carry auto-generated masks only</td>
+          <td class="unpublished">Download in progress &mdash; not yet evaluated, not in the charts below</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <div class="callout" id="callout"></div>
   <div class="callout other" id="calloutOther"></div>
