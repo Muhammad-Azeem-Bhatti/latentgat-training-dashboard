@@ -87,14 +87,18 @@ body{
   gap: 6px;
   font-family:'IBM Plex Mono', monospace;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px 6px 12px;
   text-decoration: none;
-  margin-bottom: 18px;
-  transition: color .15s ease;
+  margin-bottom: 22px;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
-.home-link:hover{ color: var(--series-1); }
+.home-link:hover{ color: var(--page); background: var(--series-1); border-color: var(--series-1); }
 .eyebrow{
   font-family:'IBM Plex Mono', monospace;
   font-size: 12px;

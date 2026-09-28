@@ -68,14 +68,18 @@
     gap: 6px;
     font-family: "IBM Plex Mono", monospace;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: .04em;
-    color: var(--ink-3);
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px 6px 12px;
     text-decoration: none;
-    margin-bottom: 18px;
-    transition: color .15s ease;
+    margin-bottom: 22px;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
   }
-  .home-link:hover { color: var(--accent); }
+  .home-link:hover { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
   .eyebrow {
     font-family: "IBM Plex Mono", monospace;
     font-size: 12.5px;
