@@ -15,7 +15,8 @@
   --series-home: #2a78d6;   /* BraTS2021 -- reference palette slot 1 */
   --series-africa:#eb6834;  /* BraTS-Africa Glioma -- reference palette slot 2 */
   --series-other: #1baf7a;  /* BraTS-Africa Other Neoplasms -- reference palette slot 3 */
-  --series-ucsf:  #eda100;  /* UCSF-PDGM -- reference palette slot 4 */
+  --series-ucsf:  #eda100;  /* UCSF-PDGM (clean) -- reference palette slot 4 */
+  --series-ucsf-all: #e87ba4; /* UCSF-PDGM (whole, diagnostic) -- reference palette slot 5 */
   --good:        #0ca30c;
   --tile-bg:     #f3f2ee;
   --callout-bg:  #fdf3ee;
@@ -40,6 +41,7 @@
     --series-africa:#d95926;
     --series-other: #199e70;
     --series-ucsf:  #c98500;
+    --series-ucsf-all: #d55181;
     --good:         #0ca30c;
     --tile-bg:      #202020;
     --callout-bg:   #241a15;
@@ -64,6 +66,7 @@
   --series-africa:#d95926;
   --series-other: #199e70;
   --series-ucsf:  #c98500;
+  --series-ucsf-all: #d55181;
   --good:         #0ca30c;
   --tile-bg:      #202020;
   --callout-bg:   #241a15;
@@ -145,7 +148,8 @@ h1{
   margin-bottom: 28px;
 }
 
-.callout.ucsf{ background: var(--callout3-bg); border-left-color: var(--callout3-border); margin-bottom: 28px; }
+.callout.ucsf{ background: var(--callout3-bg); border-left-color: var(--callout3-border); margin-bottom: 14px; }
+.callout.leakage{ background: var(--callout3-bg); border-left-color: var(--series-ucsf-all); margin-bottom: 28px; }
 .ra-wrap{ background: var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:24px; overflow-x:auto; }
 .ra-wrap h2{ font-family:'Newsreader', Georgia, serif; font-size:19px; font-weight:600; margin:0 0 4px; }
 .ra-wrap p{ font-size:13px; color: var(--text-secondary); margin:0 0 12px; max-width: 660px; line-height:1.55; }
@@ -224,9 +228,9 @@ svg.chart{ display:block; }
     glioma cohort (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a cohort of
     <b>non-glioma</b> neoplasms from the same source
     (<b>BraTS-Africa &mdash; Other Neoplasms</b>, n=51) that the model was never
-    trained to segment, and a second glioma cohort (<b>UCSF-PDGM</b>, n=238, patients that also appear in BraTS2021 removed).
-    All four evaluations use identical inference settings
-    (see the note below), so home and external numbers are directly comparable.
+    trained to segment, and a second glioma cohort, <b>UCSF-PDGM</b> -- shown both as the clean external set (n=239, patients also in BraTS2021 removed) and, for comparison only, the whole downloaded collection (n=494, overlap patients included as a leakage diagnostic; see the note below the charts).
+    All five evaluation runs (UCSF-PDGM contributes two: clean and whole) use identical
+    inference settings (see the note below), so home and external numbers are directly comparable.
   </p>
 
   <div class="stats" id="statStrip"></div>
@@ -239,6 +243,8 @@ svg.chart{ display:block; }
 
   <div class="ra-wrap" id="regionAware"></div>
 
+  <div class="callout leakage" id="calloutLeakage"></div>
+
   <p class="note">
     Dice and NSD are unitless in [0,1] (higher is better); HD95 is reported in
     millimeters (lower is better). "Mean" is the arithmetic mean of the five
@@ -249,7 +255,7 @@ svg.chart{ display:block; }
     out-of-task robustness check, not as evidence for or against glioma
     generalization.
     <br><br>
-    <b>Inference settings (identical for all four cohorts):</b> sliding-window
+    <b>Inference settings (identical for all five evaluation runs):</b> sliding-window
     overlap 0.625 with constant blending, 4-view test-time augmentation
     (identity plus one flip per axis), and no post-processing. For reference,
     the same checkpoint without TTA scores Dice_Mean 0.8654, HD95_Mean 9.12mm and
@@ -259,10 +265,12 @@ svg.chart{ display:block; }
     <b>UCSF-PDGM note:</b> plain (not bias-corrected) images were used; the bias-corrected images scored
     clearly worse on an earlier 20-patient comparison. Only baseline scans are included; of the 495 baseline
     patients in the full UCSF-PDGM collection, 256 were found in the BraTS2021 training set (matched by tumour
-    segmentation) and excluded, and all follow-up scans are excluded. The download is now complete; 238 of the
-    239 remaining clean patients were evaluated (one patient's files repeatedly failed Kaggle's dataset-creation
-    step and was left out). The UCSF bars in the charts use the same all-cases convention as the other cohorts;
-    the asterisked values above and the table below the charts show the region-aware view.
+    segmentation) and all follow-up scans are excluded. All 239 remaining clean patients were evaluated for the
+    reported generalization result; 255 of the 256 overlap patients were also evaluated separately for the
+    whole-dataset leakage diagnostic below the charts (one patient's files repeatedly failed Kaggle's
+    dataset-creation step and was left out of both runs). The UCSF-PDGM (clean) bars in the charts use the same
+    all-cases convention as the other cohorts; the asterisked values above and the table below the charts show
+    the region-aware view.
     <br><br>
     <b>Checkpoint-selection note:</b> four checkpoints have now been tested
     externally (epochs 70, 90, 140, 156; compared here assuming the same
@@ -288,7 +296,8 @@ const SERIES = [
   { key: 'home',         label: 'BraTS2021 (home, epoch 156)',                   short: 'BraTS2021',    colorVar: '--series-home' },
   { key: 'africaGlioma', label: 'BraTS-Africa — Glioma (n=95)',              short: 'Africa Glioma', colorVar: '--series-africa' },
   { key: 'africaOther',  label: 'BraTS-Africa — Other Neoplasms (n=51, out-of-task)', short: 'Africa Other', colorVar: '--series-other' },
-  { key: 'ucsf',         label: 'UCSF-PDGM (n=238, BraTS2021 overlap excluded)', short: 'UCSF-PDGM', colorVar: '--series-ucsf' },
+  { key: 'ucsf',         label: 'UCSF-PDGM (n=239, BraTS2021 overlap excluded)', short: 'UCSF-PDGM (clean)', colorVar: '--series-ucsf' },
+  { key: 'ucsfAll',      label: 'UCSF-PDGM (n=494, whole dataset incl. overlap -- diagnostic)', short: 'UCSF-PDGM (whole)', colorVar: '--series-ucsf-all' },
 ];
 
 // epoch 156 (BraTS2021 home cohort, best combined Dice+HD95 rank over all 200 epochs) vs the two
@@ -299,35 +308,40 @@ const metrics = [
     home:         { Mean: 0.8686, WT: 0.9245, TC: 0.9057, ET: 0.8693, NCR: 0.7707, Edema: 0.8488 },
     africaGlioma: { Mean: 0.7949, WT: 0.9098, TC: 0.7866, ET: 0.7703, NCR: 0.5671, Edema: 0.7917 },
     africaOther:  { Mean: 0.7298, WT: 0.8183, TC: 0.7321, ET: 0.7247, NCR: 0.3259, Edema: 0.7074 },
-    ucsf:         { Mean: 0.8807, WT: 0.9181, TC: 0.7322, ET: 0.7335, NCR: 0.7787, Edema: 0.8717 },
+    ucsf:         { Mean: 0.8811, WT: 0.9183, TC: 0.7292, ET: 0.7304, NCR: 0.7796, Edema: 0.8722 },
+    ucsfAll:      { Mean: 0.8914, WT: 0.9265, TC: 0.8402, ET: 0.8208, NCR: 0.8227, Edema: 0.8736 },
   },
   {
     id: 'hd95', title: 'HD95', dirIcon: '↓ lower is better', unit: 'mm', decimals: 1, domainMax: null,
     home:         { Mean: 8.67, WT: 6.86, TC: 4.35, ET: 9.53, NCR: 15.88, Edema: 6.71 },
     africaGlioma: { Mean: 17.48, WT: 12.46, TC: 14.76, ET: 11.37, NCR: 35.23, Edema: 13.58 },
     africaOther:  { Mean: 28.97, WT: 20.83, TC: 23.30, ET: 26.48, NCR: 48.81, Edema: 25.43 },
-    ucsf:         { Mean: 40.44, WT: 6.24, TC: 71.83, ET: 67.98, NCR: 49.73, Edema: 6.43 },
+    ucsf:         { Mean: 40.90, WT: 6.22, TC: 73.10, ET: 69.26, NCR: 49.52, Edema: 6.40 },
+    ucsfAll:      { Mean: 22.42, WT: 5.40, TC: 36.64, ET: 34.68, NCR: 29.84, Edema: 5.53 },
   },
   {
     id: 'nsd', title: 'Normalized Surface Dice', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
     home:         { Mean: 0.8944, WT: 0.9111, TC: 0.9055, ET: 0.9304, NCR: 0.8201, Edema: 0.9048 },
     africaGlioma: { Mean: 0.7732, WT: 0.8662, TC: 0.7338, ET: 0.8235, NCR: 0.6144, Edema: 0.8283 },
     africaOther:  { Mean: 0.6599, WT: 0.7506, TC: 0.6619, ET: 0.7241, NCR: 0.4137, Edema: 0.7494 },
-    ucsf:         { Mean: 0.8334, WT: 0.9139, TC: 0.7508, ET: 0.7814, NCR: 0.8183, Edema: 0.9025 },
+    ucsf:         { Mean: 0.8324, WT: 0.9142, TC: 0.7477, ET: 0.7781, NCR: 0.8190, Edema: 0.9029 },
+    ucsfAll:      { Mean: 0.8889, WT: 0.9204, TC: 0.8607, ET: 0.8787, NCR: 0.8730, Edema: 0.9117 },
   },
   {
     id: 'sens', title: 'Sensitivity (Recall)', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
     home:         { Mean: 0.8757, WT: 0.9320, TC: 0.9053, ET: 0.8894, NCR: 0.8199, Edema: 0.8802 },
     africaGlioma: { Mean: 0.7903, WT: 0.9086, TC: 0.8007, ET: 0.6984, NCR: 0.7828, Edema: 0.8289 },
     africaOther:  { Mean: 0.7375, WT: 0.8273, TC: 0.7446, ET: 0.7029, NCR: 0.6091, Edema: 0.7874 },
-    ucsf:         { Mean: 0.8941, WT: 0.9315, TC: 0.8987, ET: 0.8973, NCR: 0.9098, Edema: 0.8957 },
+    ucsf:         { Mean: 0.8944, WT: 0.9316, TC: 0.8991, ET: 0.8977, NCR: 0.9102, Edema: 0.8961 },
+    ucsfAll:      { Mean: 0.8964, WT: 0.9315, TC: 0.9205, ET: 0.9002, NCR: 0.9066, Edema: 0.8884 },
   },
   {
     id: 'prec', title: 'Precision', dirIcon: '↑ higher is better', unit: '', decimals: 2, domainMax: 1,
     home:         { Mean: 0.8702, WT: 0.9267, TC: 0.9326, ET: 0.8842, NCR: 0.8196, Edema: 0.8431 },
     africaGlioma: { Mean: 0.8162, WT: 0.9309, TC: 0.8386, ET: 0.9100, NCR: 0.5579, Edema: 0.8005 },
     africaOther:  { Mean: 0.7640, WT: 0.8552, TC: 0.8093, ET: 0.8753, NCR: 0.3339, Edema: 0.7200 },
-    ucsf:         { Mean: 0.8830, WT: 0.9206, TC: 0.7738, ET: 0.7646, NCR: 0.8101, Edema: 0.8732 },
+    ucsf:         { Mean: 0.8834, WT: 0.9209, TC: 0.7706, ET: 0.7614, NCR: 0.8109, Edema: 0.8737 },
+    ucsfAll:      { Mean: 0.8966, WT: 0.9320, TC: 0.8646, ET: 0.8415, NCR: 0.8404, Edema: 0.8779 },
   },
   {
     id: 'spec', title: 'Specificity', dirIcon: '↑ higher is better', unit: '', decimals: 3, domainMax: 1,
@@ -335,11 +349,12 @@ const metrics = [
     africaGlioma: { Mean: 0.9976, WT: 0.9977, TC: 0.9984, ET: 0.9996, NCR: 0.9975, Edema: 0.9957 },
     africaOther:  { Mean: 0.9979, WT: 0.9965, TC: 0.9988, ET: 0.9997, NCR: 0.9984, Edema: 0.9958 },
     ucsf:         { Mean: 0.9993, WT: 0.9987, TC: 0.9997, ET: 0.9997, NCR: 0.9998, Edema: 0.9984 },
+    ucsfAll:      { Mean: 0.9993, WT: 0.9988, TC: 0.9997, ET: 0.9997, NCR: 0.9998, Edema: 0.9985 },
   },
 ];
 
-const REGION_AWARE = {"africaGlioma": [{"region": "WT", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.9097878406024934, "HD95 (present)": 12.462666581806383, "NSD (present)": 0.8661582887172699, "false-pos when absent": 0.0, "Dice (all cases)": 0.9097878406024934, "HD95 (all cases)": 12.462666581806383}, {"region": "TC", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7866396722028374, "HD95 (present)": 14.758605318320425, "NSD (present)": 0.7337520729879065, "false-pos when absent": 0.0, "Dice (all cases)": 0.7866396722028374, "HD95 (all cases)": 14.758605318320425}, {"region": "ET", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7702539262276851, "HD95 (present)": 11.368184570262306, "NSD (present)": 0.823515154186048, "false-pos when absent": 0.0, "Dice (all cases)": 0.7702539262276851, "HD95 (all cases)": 11.368184570262306}, {"region": "NCR", "n_present": 88.0, "n_absent": 7.0, "Dice (present)": 0.6008683874445917, "HD95 (present)": 12.527278901501136, "NSD (present)": 0.6518679295920513, "false-pos when absent": 6.0, "Dice (all cases)": 0.5671201906737449, "HD95 (all cases)": 35.22526887718}, {"region": "Edema", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7916740845889906, "HD95 (present)": 13.581081266152232, "NSD (present)": 0.8283430146543603, "false-pos when absent": 0.0, "Dice (all cases)": 0.7916740845889906, "HD95 (all cases)": 13.581081266152232}], "africaOther": [{"region": "WT", "n_present": 51.0, "n_absent": 0.0, "Dice (present)": 0.8183030582042514, "HD95 (present)": 20.827469080102208, "NSD (present)": 0.7506061208014395, "false-pos when absent": 0.0, "Dice (all cases)": 0.8183030582042514, "HD95 (all cases)": 20.827469080102208}, {"region": "TC", "n_present": 50.0, "n_absent": 1.0, "Dice (present)": 0.7467208034265786, "HD95 (present)": 16.288032569885253, "NSD (present)": 0.6751070500910282, "false-pos when absent": 1.0, "Dice (all cases)": 0.7320792288495824, "HD95 (all cases)": 23.30199271557378}, {"region": "ET", "n_present": 49.0, "n_absent": 2.0, "Dice (present)": 0.7542362316958227, "HD95 (present)": 12.290975436872365, "NSD (present)": 0.7536796842682727, "false-pos when absent": 2.0, "Dice (all cases)": 0.724658350069213, "HD95 (all cases)": 26.475643066798938}, {"region": "NCR", "n_present": 46.0, "n_absent": 5.0, "Dice (present)": 0.3395431106075013, "HD95 (present)": 21.5899963275246, "NSD (present)": 0.43688562888976024, "false-pos when absent": 4.0, "Dice (all cases)": 0.32586241360476387, "HD95 (all cases)": 48.80666335423788}, {"region": "Edema", "n_present": 50.0, "n_absent": 1.0, "Dice (present)": 0.7215034974142327, "HD95 (present)": 18.46108580827713, "NSD (present)": 0.7644056272506714, "false-pos when absent": 1.0, "Dice (all cases)": 0.7073563700191782, "HD95 (all cases)": 25.432437066938363}], "ucsf": [{"region": "WT", "n_present": 238.0, "n_absent": 0.0, "Dice (present)": 0.9180716476578508, "HD95 (present)": 6.237614534482234, "NSD (present)": 0.9138560991327301, "false-pos when absent": 0.0, "Dice (all cases)": 0.9180716476578508, "HD95 (all cases)": 6.237614534482234}, {"region": "TC", "n_present": 168.0, "n_absent": 70.0, "Dice (present)": 0.8468453820117958, "HD95 (present)": 17.16801511815616, "NSD (present)": 0.873183182817662, "false-pos when absent": 38.0, "Dice (all cases)": 0.7322270017866189, "HD95 (all cases)": 71.83288462121948}, {"region": "ET", "n_present": 164.0, "n_absent": 74.0, "Dice (present)": 0.84494583262906, "HD95 (present)": 12.001778018183824, "NSD (present)": 0.9144803707192584, "false-pos when absent": 38.0, "Dice (all cases)": 0.7334921023386838, "HD95 (all cases)": 67.98441846631154}, {"region": "NCR", "n_present": 149.0, "n_absent": 89.0, "Dice (present)": 0.8075783198158357, "HD95 (present)": 19.19232408952393, "NSD (present)": 0.8708063702555311, "false-pos when absent": 24.0, "Dice (all cases)": 0.7786939977509979, "HD95 (all cases)": 49.729648274533886}, {"region": "Edema", "n_present": 238.0, "n_absent": 0.0, "Dice (present)": 0.8717307104458086, "HD95 (present)": 6.4255746507845, "NSD (present)": 0.9025314683172884, "false-pos when absent": 0.0, "Dice (all cases)": 0.8717307104458086, "HD95 (all cases)": 6.4255746507845}]};
-const RA_N = {"africaGlioma": 95, "africaOther": 51, "ucsf": 238};
+const REGION_AWARE = {"africaGlioma": [{"region": "WT", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.9097878406024934, "HD95 (present)": 12.462666581806383, "NSD (present)": 0.8661582887172699, "false-pos when absent": 0.0, "Dice (all cases)": 0.9097878406024934, "HD95 (all cases)": 12.462666581806383}, {"region": "TC", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7866396722028374, "HD95 (present)": 14.758605318320425, "NSD (present)": 0.7337520729879065, "false-pos when absent": 0.0, "Dice (all cases)": 0.7866396722028374, "HD95 (all cases)": 14.758605318320425}, {"region": "ET", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7702539262276851, "HD95 (present)": 11.368184570262306, "NSD (present)": 0.823515154186048, "false-pos when absent": 0.0, "Dice (all cases)": 0.7702539262276851, "HD95 (all cases)": 11.368184570262306}, {"region": "NCR", "n_present": 88.0, "n_absent": 7.0, "Dice (present)": 0.6008683874445917, "HD95 (present)": 12.527278901501136, "NSD (present)": 0.6518679295920513, "false-pos when absent": 6.0, "Dice (all cases)": 0.5671201906737449, "HD95 (all cases)": 35.22526887718}, {"region": "Edema", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7916740845889906, "HD95 (present)": 13.581081266152232, "NSD (present)": 0.8283430146543603, "false-pos when absent": 0.0, "Dice (all cases)": 0.7916740845889906, "HD95 (all cases)": 13.581081266152232}], "africaOther": [{"region": "WT", "n_present": 51.0, "n_absent": 0.0, "Dice (present)": 0.8183030582042514, "HD95 (present)": 20.827469080102208, "NSD (present)": 0.7506061208014395, "false-pos when absent": 0.0, "Dice (all cases)": 0.8183030582042514, "HD95 (all cases)": 20.827469080102208}, {"region": "TC", "n_present": 50.0, "n_absent": 1.0, "Dice (present)": 0.7467208034265786, "HD95 (present)": 16.288032569885253, "NSD (present)": 0.6751070500910282, "false-pos when absent": 1.0, "Dice (all cases)": 0.7320792288495824, "HD95 (all cases)": 23.30199271557378}, {"region": "ET", "n_present": 49.0, "n_absent": 2.0, "Dice (present)": 0.7542362316958227, "HD95 (present)": 12.290975436872365, "NSD (present)": 0.7536796842682727, "false-pos when absent": 2.0, "Dice (all cases)": 0.724658350069213, "HD95 (all cases)": 26.475643066798938}, {"region": "NCR", "n_present": 46.0, "n_absent": 5.0, "Dice (present)": 0.3395431106075013, "HD95 (present)": 21.5899963275246, "NSD (present)": 0.43688562888976024, "false-pos when absent": 4.0, "Dice (all cases)": 0.32586241360476387, "HD95 (all cases)": 48.80666335423788}, {"region": "Edema", "n_present": 50.0, "n_absent": 1.0, "Dice (present)": 0.7215034974142327, "HD95 (present)": 18.46108580827713, "NSD (present)": 0.7644056272506714, "false-pos when absent": 1.0, "Dice (all cases)": 0.7073563700191782, "HD95 (all cases)": 25.432437066938363}], "ucsf": [{"region": "WT", "n_present": 239.0, "n_absent": 0.0, "Dice (present)": 0.9183390993511164, "HD95 (present)": 6.215699829317037, "NSD (present)": 0.9142165338643924, "false-pos when absent": 0.0, "Dice (all cases)": 0.9183390993511164, "HD95 (all cases)": 6.215699829317037}, {"region": "TC", "n_present": 168.0, "n_absent": 71.0, "Dice (present)": 0.8468453820117958, "HD95 (present)": 17.16801511815616, "NSD (present)": 0.873183182817662, "false-pos when absent": 39.0, "Dice (all cases)": 0.7291632915280973, "HD95 (all cases)": 73.09718217510559}, {"region": "ET", "n_present": 164.0, "n_absent": 75.0, "Dice (present)": 0.84494583262906, "HD95 (present)": 12.001778018183824, "NSD (present)": 0.9144803707192584, "false-pos when absent": 39.0, "Dice (all cases)": 0.7304230987724127, "HD95 (all cases)": 69.26481838904664}, {"region": "NCR", "n_present": 149.0, "n_absent": 90.0, "Dice (present)": 0.8075783198158357, "HD95 (present)": 19.19232408952393, "NSD (present)": 0.8708063702555311, "false-pos when absent": 24.0, "Dice (all cases)": 0.7796199642876046, "HD95 (all cases)": 49.52157443238103}, {"region": "Edema", "n_present": 239.0, "n_absent": 0.0, "Dice (present)": 0.8721913754366191, "HD95 (present)": 6.402873501618038, "NSD (present)": 0.9029392864414838, "false-pos when absent": 0.0, "Dice (all cases)": 0.8721913754366191, "HD95 (all cases)": 6.402873501618038}]};
+const RA_N = {"africaGlioma": 95, "africaOther": 51, "ucsf": 239};
 
 function renderRegionAware(){
   const cohorts = [
@@ -359,6 +374,7 @@ function renderRegionAware(){
         <td>${r.n_absent}</td><td>${fp}</td></tr>`;
     });
   });
+
   document.getElementById('regionAware').innerHTML = `
     <h2>Regions that are absent from the ground truth</h2>
     <p>Under BraTS scoring, a region with an <b>empty ground truth</b> scores Dice 1 / HD95 0 if the model predicts
@@ -383,6 +399,26 @@ function renderRegionAware(){
     ${u.NCR['false-pos when absent']} of those &mdash; see the table below the charts. The same effect explains most of
     BraTS-Africa Glioma's NCR HD95 (${g.NCR['HD95 (all cases)'].toFixed(1)}&nbsp;mm over all cases,
     ${g.NCR['HD95 (present)'].toFixed(1)}&nbsp;mm where NCR exists).`;
+}
+
+function renderLeakageDiagnostic(){
+  const d = metrics[0], hd = metrics[1];
+  const gapDice = (d.ucsfAll.Mean - d.ucsf.Mean).toFixed(3);
+  const gapHd = (hd.ucsf.Mean - hd.ucsfAll.Mean).toFixed(1);
+  document.getElementById('calloutLeakage').innerHTML = `
+    <b>Why "whole dataset" and "clean" are shown separately:</b> UCSF-PDGM (whole) includes
+    255 patients that are also present in the BraTS2021 training set (matched by tumour
+    segmentation) -- the model has effectively already seen them. Scored on those overlap
+    patients alone, Dice_Mean is <b>0.901</b> and HD95_Mean is <b>5.1&nbsp;mm</b>, far better than
+    the clean, genuinely external result (Dice_Mean ${d.ucsf.Mean.toFixed(3)}, HD95_Mean
+    ${hd.ucsf.Mean.toFixed(1)}&nbsp;mm) -- confirmed most sharply on TC and ET, where HD95 is
+    roughly <b>29-30&times; lower</b> on overlap patients (2.5&nbsp;mm / 2.3&nbsp;mm) than on clean
+    ones (73.1&nbsp;mm / 69.3&nbsp;mm). Blending both into "whole dataset" (Dice_Mean
+    ${d.ucsfAll.Mean.toFixed(3)}, HD95_Mean ${hd.ucsfAll.Mean.toFixed(1)}&nbsp;mm) would overstate
+    generalization by ${gapDice} Dice and understate HD95 by ${gapHd}&nbsp;mm on the mean alone.
+    <b>The clean series (n=239) is the reported generalization result; whole dataset is a
+    diagnostic showing why the overlap exclusion in the methodology matters, not a claim about
+    the model's external performance.</b>`;
 }
 
 function fmt(v, decimals){ return v.toFixed(decimals); }
@@ -512,6 +548,7 @@ function renderChart(metric){
 document.getElementById('charts').innerHTML = metrics.map(renderChart).join('');
 renderStats();
 renderRegionAware();
+renderLeakageDiagnostic();
 
 metrics.forEach(metric => {
   const svg = document.getElementById(`svg-${metric.id}`);
