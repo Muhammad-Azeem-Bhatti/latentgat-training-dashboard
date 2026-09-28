@@ -62,24 +62,6 @@
   }
   .wrap { max-width: 860px; margin: 0 auto; }
 
-  .home-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .04em;
-    color: var(--ink-2);
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 6px 14px 6px 12px;
-    text-decoration: none;
-    margin-bottom: 22px;
-    transition: color .15s ease, border-color .15s ease, background .15s ease;
-  }
-  .home-link:hover { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
   .eyebrow {
     font-family: "IBM Plex Mono", monospace;
     font-size: 12.5px;
@@ -230,7 +212,6 @@
 </style>
 
 <div class="wrap">
-  <a class="home-link" href="index.html">&larr; Home</a>
   <div class="eyebrow">Custom3DUNet_LatentGAT &middot; home validation cohort</div>
   <h1>BraTS2021 Deep Dive</h1>
   <p class="sub">
@@ -318,11 +299,35 @@
     </figure>
   </section>
 
+  <section class="block">
+    <div class="block-head"><span class="num">06</span><h2>GAT explainability</h2></div>
+    <p class="desc">
+      Two different signals read out of the same forward pass on the rank-1 case:
+      <b>attention weight</b> (how much a bottleneck node's representation leans on
+      its graph neighbors) and <b>activation magnitude</b> (how large the GAT's
+      output actually is at that node). They are not the same thing &mdash; across
+      all 4,096 bottleneck nodes the two are essentially uncorrelated (r&nbsp;=&nbsp;0.02).
+      Attention stayed nearly flat everywhere; activation is what actually concentrates
+      on the tumor. Breaking activation down by BraTS region shows it further:
+      <b>NCR</b> (0.3% of all nodes) carries the highest activation, while
+      <b>edema</b> (3.8% of all nodes, by far the largest region) stays low despite
+      covering the most area &mdash; activation tracks pathological specificity, not
+      region size. NCR's number rests on only 12 nodes, so it's the least statistically
+      solid of the five and is reported as a directional finding, not a precise estimate.
+    </p>
+    <figure>
+      <img src="attention_map_BraTS2021_01564.png" alt="GAT attention weight vs activation magnitude for case BraTS2021_01564, with a second row breaking activation down by NCR, Edema, ET, TC and WT">
+      <figcaption>Top row: whole-crop attention and activation maps. Bottom row: activation masked to one BraTS region at a time, same color scale throughout.</figcaption>
+    </figure>
+  </section>
+
   <footer>
     Combined rank: Dice (descending) + HD95 (ascending) + NSD (descending), summed
     per patient, lowest total wins &mdash; same method used to select the epoch-156
     checkpoint, applied here per patient. Slice choice for the qualitative figures
     is the axial slice with the largest ground-truth tumor cross-section, same rule
-    for every case in both figures.
+    for every case in both figures. GAT attention/activation were computed from a
+    single direct forward pass on a 128&sup3; tumor-centered crop (not stitched via
+    sliding-window inference, which would overwrite the captured values per-patch).
   </footer>
 </div>
