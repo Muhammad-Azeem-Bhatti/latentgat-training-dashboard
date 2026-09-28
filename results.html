@@ -1,0 +1,309 @@
+<title>BraTS2021 Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef0f4;
+    --border: #dfe2e8;
+    --ink: #1a1d24;
+    --ink-2: #565c6b;
+    --ink-3: #8a90a0;
+    --accent: #2a78d6;
+    --accent-ink: #ffffff;
+    --best: #1baf7a;
+    --worst: #eb6834;
+    --shadow: 0 1px 2px rgba(20,23,30,.04), 0 8px 24px rgba(20,23,30,.05);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171d;
+      --surface: #1b1f27;
+      --surface-2: #20242e;
+      --border: #2c313d;
+      --ink: #eceef2;
+      --ink-2: #a7acba;
+      --ink-3: #767c8c;
+      --accent: #4a92e8;
+      --accent-ink: #0c1117;
+      --best: #2fcf93;
+      --worst: #f4864a;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171d;
+    --surface: #1b1f27;
+    --surface-2: #20242e;
+    --border: #2c313d;
+    --ink: #eceef2;
+    --ink-2: #a7acba;
+    --ink-3: #767c8c;
+    --accent: #4a92e8;
+    --accent-ink: #0c1117;
+    --best: #2fcf93;
+    --worst: #f4864a;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Source Sans 3", system-ui, sans-serif;
+    margin: 0;
+    padding-inline: 20px;
+    padding-block: 48px 80px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.05;
+    letter-spacing: -.01em;
+    margin: 10px 0 14px;
+    text-wrap: balance;
+  }
+  .sub {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 640px;
+    margin: 0 0 30px;
+  }
+  .sub b { color: var(--ink); font-weight: 600; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+  .stat {
+    background: var(--surface);
+    padding: 16px 14px;
+  }
+  .stat .v {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+  }
+  .stat .k {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  section.block { margin-block: 56px; }
+  section.block:first-of-type { margin-top: 0; }
+  .block-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-3);
+    letter-spacing: .04em;
+  }
+  h2 {
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -.005em;
+  }
+  .desc {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 620px;
+    margin: 10px 0 20px;
+  }
+  .desc b { color: var(--ink); font-weight: 600; }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px 3px 7px;
+    border-radius: 999px;
+    margin-right: 6px;
+  }
+  .tag.best { background: color-mix(in srgb, var(--best) 16%, transparent); color: var(--best); }
+  .tag.worst { background: color-mix(in srgb, var(--worst) 16%, transparent); color: var(--worst); }
+  .tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  figure {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
+  figcaption {
+    font-size: 13px;
+    color: var(--ink-3);
+    padding: 12px 6px 2px;
+    line-height: 1.5;
+  }
+
+  .pending {
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .pending .pt {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pending .pd {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin-top: 6px;
+    max-width: 420px;
+    margin-inline: auto;
+  }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Custom3DUNet_LatentGAT &middot; home validation cohort</div>
+  <h1>BraTS2021 Deep Dive</h1>
+  <p class="sub">
+    Epoch 156 checkpoint (selected by combined Dice+HD95+NSD rank across all 200
+    epochs), evaluated on the <b>251-patient</b> home BraTS2021 validation split
+    with sliding-window inference (overlap 0.625, constant blending) and 4-view
+    test-time augmentation.
+  </p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">0.869</div><div class="k">Dice mean</div></div>
+    <div class="stat"><div class="v">8.67mm</div><div class="k">HD95 mean</div></div>
+    <div class="stat"><div class="v">0.894</div><div class="k">NSD mean</div></div>
+    <div class="stat"><div class="v">156</div><div class="k">epoch</div></div>
+    <div class="stat"><div class="v">251</div><div class="k">patients</div></div>
+  </div>
+
+  <section class="block">
+    <div class="block-head"><span class="num">01</span><h2>Training progression</h2></div>
+    <p class="desc">
+      Loss converges sharply around epoch 25; validation Dice plateaus shortly
+      after. Epoch 156 was picked by combined rank rather than peak Dice alone
+      &mdash; the single best-Dice epoch is 174 (0.8662), just 0.0008 higher,
+      chosen against for its slightly weaker HD95/NSD balance.
+    </p>
+    <figure>
+      <img src="training_curve.png" alt="Training loss and validation Dice curves over 200 epochs, epoch 156 marked">
+      <figcaption>Train loss and per-region validation Dice (mean, WT, TC, ET) across 200 epochs.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><span class="num">02</span><h2>Per-patient distribution</h2></div>
+    <p class="desc">
+      A mean&plusmn;std hides the shape of the spread. The violin shows the
+      full distribution across all 251 patients; <span class="tag best">best 5</span>
+      and <span class="tag worst">worst 5</span> sit at the genuine tails, not as
+      isolated outliers picked to look good or bad.
+    </p>
+    <figure>
+      <img src="patient_distribution.png" alt="Violin and box plots of per-patient Dice, HD95 and NSD across 251 validation patients">
+      <figcaption>Dice, HD95 and NSD distributions, n=251. Gray points are individual patients.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><span class="num">03</span><h2>Failure-mode confusion</h2></div>
+    <p class="desc">
+      Voxel-level confusion matrix (row-normalized), best vs. worst 5 cases.
+      Formalizes what the worst-case images show: the model doesn't just
+      under-segment, it misclassifies <b>NCR as edema</b> in over half its
+      NCR voxels, and confuses ET with both background and edema.
+    </p>
+    <figure>
+      <img src="failure_mode_confusion.png" alt="Voxel-level confusion matrix, best 5 vs worst 5 validation cases">
+      <figcaption>Background/NCR/Edema/ET, row-normalized to % of true-class voxels.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><span class="num">04</span><h2>Best-segmented cases</h2></div>
+    <p class="desc">
+      The 5 highest combined-rank patients &mdash; large, well-circumscribed,
+      strongly contrast-enhancing tumors with clear boundaries. Dice &gt; 0.978
+      and HD95 &asymp; 1mm across all five.
+    </p>
+    <figure>
+      <img src="qualitative_best5.png" alt="Five best-segmented validation cases: FLAIR, ground truth and prediction overlays">
+      <figcaption>FLAIR &middot; ground truth &middot; prediction, ranks 1&ndash;5.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><span class="num">05</span><h2>Worst-segmented cases</h2></div>
+    <p class="desc">
+      Ranks 247&ndash;251 show a specific, nameable failure mode: in two cases
+      the model predicts <b>edema where the ground truth is necrotic core</b>
+      &mdash; a class-confusion error, not just a boundary miss. One case (rank
+      248) is a genuinely tiny lesion where a few voxels of disagreement
+      dominate the Dice score.
+    </p>
+    <figure>
+      <img src="qualitative_worst5.png" alt="Five worst-segmented validation cases: FLAIR, ground truth and prediction overlays">
+      <figcaption>FLAIR &middot; ground truth &middot; prediction, ranks 247&ndash;251.</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    Combined rank: Dice (descending) + HD95 (ascending) + NSD (descending), summed
+    per patient, lowest total wins &mdash; same method used to select the epoch-156
+    checkpoint, applied here per patient. Slice choice for the qualitative figures
+    is the axial slice with the largest ground-truth tumor cross-section, same rule
+    for every case in both figures.
+  </footer>
+</div>
