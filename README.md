@@ -4,6 +4,8 @@ Training-metrics chart (Dice, HD95, NSD, Sensitivity, Precision, Specificity —
 
 **Live page:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/
 
-**Generalization comparison:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/generalization-comparison.html — the same metric suite comparing the epoch-156 checkpoint on the home BraTS2021 validation split against two out-of-distribution BraTS-Africa cohorts and a second glioma cohort, UCSF-PDGM (n=238 of 239 patients not present in BraTS2021), all with identical 4-view-TTA inference. Includes a region-aware table for regions absent from the ground truth.
+**Generalization comparison:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/generalization-comparison.html — the same metric suite comparing the epoch-156 checkpoint on the home BraTS2021 validation split against two out-of-distribution BraTS-Africa cohorts and a second glioma cohort, UCSF-PDGM (n=239 patients not present in BraTS2021, plus a whole-dataset leakage diagnostic), all with identical 4-view-TTA inference. Includes a region-aware table for regions absent from the ground truth.
 
-Two self-contained HTML pages, no build step or dependencies beyond a Google Fonts stylesheet.
+**BraTS2021 deep dive:** https://muhammad-azeem-bhatti.github.io/latentgat-training-dashboard/results.html — training curve, per-patient Dice/HD95/NSD distribution across all 251 home validation patients, a voxel-level confusion matrix, and qualitative segmentation figures for the 5 best- and 5 worst-segmented cases.
+
+Three self-contained HTML pages, no build step or dependencies beyond a Google Fonts stylesheet.
