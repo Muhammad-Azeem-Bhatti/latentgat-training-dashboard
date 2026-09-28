@@ -370,6 +370,31 @@
     </figure>
   </section>
 
+  <section class="block">
+    <div class="block-head"><span class="num">09</span><h2>Calibration</h2></div>
+    <p class="desc">
+      When the model reports X% confidence on a tumor-relevant voxel, is it actually right X%
+      of the time? Computed on the full 251-patient validation set as the primary panel &mdash;
+      unlike the other explainability figures, calibration is a population statistic, and a
+      best-5/worst-5-only sample can't answer it honestly. The result is a clean gradient that
+      confirms, with a number, what the confusion matrix and TTA-uncertainty sections already
+      found: <b>Best 5</b> cases are well-calibrated (ECE&nbsp;=&nbsp;0.019, 96.9% accuracy vs.
+      98.8% confidence &mdash; a ~2-point gap). <b>All 251</b> cases sit at moderate miscalibration
+      (ECE&nbsp;=&nbsp;0.134, 83.4% accuracy vs. 96.8% confidence). <b>Worst 5</b> cases are
+      severely miscalibrated (ECE&nbsp;=&nbsp;0.406): the model reports <b>94.9% mean confidence</b>
+      while being correct only <b>54.3% of the time</b> &mdash; a 40-point gap. Confidence barely
+      drops between the best and worst cases; accuracy collapses. That's the same "confidently
+      wrong" pattern the TTA-uncertainty section found (600&times; lower uncertainty on wrong
+      voxels), now with a population-level number attached: calibration quality tracks
+      segmentation quality almost linearly, and it's worst exactly where the model already has a
+      known, systematic failure mode.
+    </p>
+    <figure>
+      <img src="calibration.png" alt="Calibration reliability diagrams for all 251 cases, best 5 cases, and worst 5 cases">
+      <figcaption>Reliability diagrams, tumor-relevant voxels only (GT tumor OR predicted tumor). Dashed line = perfect calibration.</figcaption>
+    </figure>
+  </section>
+
   <footer>
     Combined rank: Dice (descending) + HD95 (ascending) + NSD (descending), summed
     per patient, lowest total wins &mdash; same method used to select the epoch-156
