@@ -348,6 +348,28 @@
     </figure>
   </section>
 
+  <section class="block">
+    <div class="block-head"><span class="num">08</span><h2>Whole-network attribution (Grad-CAM)</h2></div>
+    <p class="desc">
+      Attention and activation above only describe the GAT bottleneck in isolation. Grad-CAM
+      on <b>the last decoder layer</b> &mdash; full resolution, right before the final output
+      &mdash; shows what the whole network (encoder, GAT, decoder, skip connections together)
+      actually used to reach its answer, backpropagated from total predicted tumor probability.
+      The two cases produce different shapes for a specific reason: the best case's CAM forms a
+      <b>ring</b> with a low-activation hole over the tumor's confident interior, while the worst
+      case's CAM is one undifferentiated blob covering the whole (wrong) prediction. That shape
+      difference explains an otherwise counterintuitive number: raw CAM/GT Dice overlap is
+      <b>higher</b> on the worst case (0.860) than the best case (0.627), not because the
+      attribution is "better" there, but because a ring structurally overlaps less with a full
+      tumor mask than a solid blob does. Both CAMs stay tightly localized (2.1% and 4.2% of the
+      crop volume respectively), confirming the signal is spatially specific rather than diffuse.
+    </p>
+    <figure>
+      <img src="gradcam.png" alt="Grad-CAM on the last decoder layer for the best and worst validation cases">
+      <figcaption>FLAIR &middot; ground truth &middot; prediction &middot; Grad-CAM (last decoder layer, normalized per case), rank 1 vs. rank 251.</figcaption>
+    </figure>
+  </section>
+
   <footer>
     Combined rank: Dice (descending) + HD95 (ascending) + NSD (descending), summed
     per patient, lowest total wins &mdash; same method used to select the epoch-156
