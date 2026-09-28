@@ -260,13 +260,15 @@
   <section class="block">
     <div class="block-head"><span class="num">03</span><h2>Failure-mode confusion</h2></div>
     <p class="desc">
-      Voxel-level confusion matrix (row-normalized), best vs. worst 5 cases.
-      Formalizes what the worst-case images show: the model doesn't just
-      under-segment, it misclassifies <b>NCR as edema</b> in over half its
-      NCR voxels, and confuses ET with both background and edema.
+      Voxel-level confusion matrix (row-normalized): all 251 cases, then best 5,
+      then worst 5. The NCR&rarr;edema confusion isn't unique to the worst cases
+      &mdash; it's a real, cohort-wide tendency (<b>11.7%</b> of NCR voxels across
+      all 251 patients), just far milder than the worst-5 extreme (<b>52.1%</b>).
+      The worst cases are an intensified version of a pattern that exists
+      everywhere, not a different failure mode entirely.
     </p>
     <figure>
-      <img src="failure_mode_confusion.png" alt="Voxel-level confusion matrix, best 5 vs worst 5 validation cases">
+      <img src="failure_mode_confusion.png" alt="Voxel-level confusion matrix, all 251 cases vs best 5 vs worst 5 validation cases">
       <figcaption>Background/NCR/Edema/ET, row-normalized to % of true-class voxels.</figcaption>
     </figure>
   </section>
