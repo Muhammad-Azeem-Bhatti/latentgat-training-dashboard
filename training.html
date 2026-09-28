@@ -81,6 +81,20 @@ body{
   margin: 0 auto;
   padding: 0 20px;
 }
+.home-link{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 18px;
+  transition: color .15s ease;
+}
+.home-link:hover{ color: var(--series-1); }
 .eyebrow{
   font-family:'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -358,6 +372,7 @@ table.data-table tbody tr:last-child td{ border-bottom:none; }
 </style>
 
 <div class="wrap">
+  <a class="home-link" href="index.html">&larr; Home</a>
   <div class="eyebrow"><span class="live-dot" style="animation:none"></span> Fixed-Decoder (corrected skip-connections + GAT) &middot; completed run &middot; <span id="eyebrowEpoch">?</span> of 200 epochs</div>
   <h1>Warmup + Cosine Schedule Training Curves</h1>
   <p class="sub">
