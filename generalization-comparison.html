@@ -17,7 +17,7 @@
   --series-other: #1baf7a;  /* BraTS-Africa Other Neoplasms -- reference palette slot 3 */
   --series-ucsf:  #eda100;  /* UCSF-PDGM (clean) -- reference palette slot 4 */
   --series-ucsf-all: #e87ba4; /* UCSF-PDGM (whole, diagnostic) -- reference palette slot 5 */
-  --series-egd: #4a8f29;    /* EGD -- not yet evaluated, table entry only */
+  --series-egd: #4a8f29;    /* EGD -- WT-only (binary ground truth), separate comparison table below */
   --good:        #0ca30c;
   --tile-bg:     #f3f2ee;
   --callout-bg:  #fdf3ee;
@@ -259,13 +259,13 @@ svg.chart{ display:block; }
   <h1>Generalization Comparison</h1>
   <p class="sub">
     Same trained checkpoint (<b>epoch 156</b>, the best epoch on the combined
-    Dice+HD95 rank across all 200 epochs), evaluated on four cohorts: the home
+    Dice+HD95 rank across all 200 epochs), evaluated on five cohorts: the home
     validation split (<b>BraTS2021</b>, n=251), an out-of-distribution external
-    glioma cohort (<b>BraTS-Africa &mdash; Glioma</b>, n=95), and a cohort of
+    glioma cohort (<b>BraTS-Africa &mdash; Glioma</b>, n=95), a cohort of
     <b>non-glioma</b> neoplasms from the same source
     (<b>BraTS-Africa &mdash; Other Neoplasms</b>, n=51) that the model was never
-    trained to segment, and a second glioma cohort, <b>UCSF-PDGM</b> -- shown both as the clean external set (n=239, patients also in BraTS2021 removed) and, for comparison only, the whole downloaded collection (n=494, overlap patients included as a leakage diagnostic; see the note below the charts).
-    All five evaluation runs (UCSF-PDGM contributes two: clean and whole) use identical
+    trained to segment, a second glioma cohort, <b>UCSF-PDGM</b> -- shown both as the clean external set (n=239, patients also in BraTS2021 removed) and, for comparison only, the whole downloaded collection (n=494, overlap patients included as a leakage diagnostic; see the note below the charts) -- and a third institution, <b>EGD</b> (n=373), shown separately below the per-region charts since its ground truth only supports whole-tumor scoring.
+    All six evaluation runs (UCSF-PDGM contributes two: clean and whole) use identical
     inference settings (see the note below), so home and external numbers are directly comparable.
   </p>
 
@@ -317,11 +317,11 @@ svg.chart{ display:block; }
           <td class="ds-note">External validation (clean, n=239) + leakage diagnostic (whole, n=494)</td>
         </tr>
         <tr>
-          <td class="ds-name"><span class="ds-namewrap"><span class="sw" style="background:var(--series-egd)"></span>EGD <span class="unpublished">(pending)</span></span></td>
-          <td class="ds-n">&asymp;374<span class="ds-note">&nbsp;of 781</span></td>
+          <td class="ds-name"><span class="ds-namewrap"><span class="sw" style="background:var(--series-egd)"></span>EGD</span></td>
+          <td class="ds-n">373<span class="ds-note">&nbsp;of 781</span></td>
           <td>Glioma, WHO grade documented <span class="ds-note">(per EGD's published dataset description)</span></td>
-          <td class="ds-note">Third institution (Erasmus MC, Netherlands), different national healthcare system and scanner fleet; only the ~374 manually-segmented subjects are usable as ground truth, the rest carry auto-generated masks only</td>
-          <td class="unpublished">Download in progress &mdash; not yet evaluated, not in the charts below</td>
+          <td class="ds-note">Third institution (Erasmus MC, Netherlands), different national healthcare system and scanner fleet; only the 373 manually-segmented subjects are usable as ground truth (the rest carry CNN-generated masks unsuitable as ground truth &mdash; see note below); images are not pre-skull-stripped like BraTS, so HD-BET brain extraction was applied before evaluation</td>
+          <td class="ds-note">External validation &mdash; <b>whole tumor only</b> (EGD's ground truth is a binary tumor mask, no NCR/edema/ET distinction), see the dedicated table below</td>
         </tr>
       </tbody>
     </table>
@@ -334,6 +334,9 @@ svg.chart{ display:block; }
   <div id="charts"></div>
 
   <div class="ra-wrap" id="regionAware"></div>
+
+  <div class="ra-wrap" id="egdCompare"></div>
+  <div class="callout ucsf" id="calloutEgd"></div>
 
   <div class="callout leakage" id="calloutLeakage"></div>
 
@@ -447,6 +450,72 @@ const metrics = [
 
 const REGION_AWARE = {"africaGlioma": [{"region": "WT", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.9097878406024934, "HD95 (present)": 12.462666581806383, "NSD (present)": 0.8661582887172699, "false-pos when absent": 0.0, "Dice (all cases)": 0.9097878406024934, "HD95 (all cases)": 12.462666581806383}, {"region": "TC", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7866396722028374, "HD95 (present)": 14.758605318320425, "NSD (present)": 0.7337520729879065, "false-pos when absent": 0.0, "Dice (all cases)": 0.7866396722028374, "HD95 (all cases)": 14.758605318320425}, {"region": "ET", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7702539262276851, "HD95 (present)": 11.368184570262306, "NSD (present)": 0.823515154186048, "false-pos when absent": 0.0, "Dice (all cases)": 0.7702539262276851, "HD95 (all cases)": 11.368184570262306}, {"region": "NCR", "n_present": 88.0, "n_absent": 7.0, "Dice (present)": 0.6008683874445917, "HD95 (present)": 12.527278901501136, "NSD (present)": 0.6518679295920513, "false-pos when absent": 6.0, "Dice (all cases)": 0.5671201906737449, "HD95 (all cases)": 35.22526887718}, {"region": "Edema", "n_present": 95.0, "n_absent": 0.0, "Dice (present)": 0.7916740845889906, "HD95 (present)": 13.581081266152232, "NSD (present)": 0.8283430146543603, "false-pos when absent": 0.0, "Dice (all cases)": 0.7916740845889906, "HD95 (all cases)": 13.581081266152232}], "africaOther": [{"region": "WT", "n_present": 51.0, "n_absent": 0.0, "Dice (present)": 0.8183030582042514, "HD95 (present)": 20.827469080102208, "NSD (present)": 0.7506061208014395, "false-pos when absent": 0.0, "Dice (all cases)": 0.8183030582042514, "HD95 (all cases)": 20.827469080102208}, {"region": "TC", "n_present": 50.0, "n_absent": 1.0, "Dice (present)": 0.7467208034265786, "HD95 (present)": 16.288032569885253, "NSD (present)": 0.6751070500910282, "false-pos when absent": 1.0, "Dice (all cases)": 0.7320792288495824, "HD95 (all cases)": 23.30199271557378}, {"region": "ET", "n_present": 49.0, "n_absent": 2.0, "Dice (present)": 0.7542362316958227, "HD95 (present)": 12.290975436872365, "NSD (present)": 0.7536796842682727, "false-pos when absent": 2.0, "Dice (all cases)": 0.724658350069213, "HD95 (all cases)": 26.475643066798938}, {"region": "NCR", "n_present": 46.0, "n_absent": 5.0, "Dice (present)": 0.3395431106075013, "HD95 (present)": 21.5899963275246, "NSD (present)": 0.43688562888976024, "false-pos when absent": 4.0, "Dice (all cases)": 0.32586241360476387, "HD95 (all cases)": 48.80666335423788}, {"region": "Edema", "n_present": 50.0, "n_absent": 1.0, "Dice (present)": 0.7215034974142327, "HD95 (present)": 18.46108580827713, "NSD (present)": 0.7644056272506714, "false-pos when absent": 1.0, "Dice (all cases)": 0.7073563700191782, "HD95 (all cases)": 25.432437066938363}], "ucsf": [{"region": "WT", "n_present": 239.0, "n_absent": 0.0, "Dice (present)": 0.9183390993511164, "HD95 (present)": 6.215699829317037, "NSD (present)": 0.9142165338643924, "false-pos when absent": 0.0, "Dice (all cases)": 0.9183390993511164, "HD95 (all cases)": 6.215699829317037}, {"region": "TC", "n_present": 168.0, "n_absent": 71.0, "Dice (present)": 0.8468453820117958, "HD95 (present)": 17.16801511815616, "NSD (present)": 0.873183182817662, "false-pos when absent": 39.0, "Dice (all cases)": 0.7291632915280973, "HD95 (all cases)": 73.09718217510559}, {"region": "ET", "n_present": 164.0, "n_absent": 75.0, "Dice (present)": 0.84494583262906, "HD95 (present)": 12.001778018183824, "NSD (present)": 0.9144803707192584, "false-pos when absent": 39.0, "Dice (all cases)": 0.7304230987724127, "HD95 (all cases)": 69.26481838904664}, {"region": "NCR", "n_present": 149.0, "n_absent": 90.0, "Dice (present)": 0.8075783198158357, "HD95 (present)": 19.19232408952393, "NSD (present)": 0.8708063702555311, "false-pos when absent": 24.0, "Dice (all cases)": 0.7796199642876046, "HD95 (all cases)": 49.52157443238103}, {"region": "Edema", "n_present": 239.0, "n_absent": 0.0, "Dice (present)": 0.8721913754366191, "HD95 (present)": 6.402873501618038, "NSD (present)": 0.9029392864414838, "false-pos when absent": 0.0, "Dice (all cases)": 0.8721913754366191, "HD95 (all cases)": 6.402873501618038}]};
 const RA_N = {"africaGlioma": 95, "africaOther": 51, "ucsf": 239};
+
+// EGD: whole-tumor only -- its ground truth (MASK.nii.gz) is a binary tumor
+// mask with no NCR/edema/ET distinction, unlike the other four cohorts' full
+// 5-region BraTS-style labels. Not part of the SERIES/metrics bar charts
+// above (which need all 5 regions per series) -- compared here on the one
+// region that IS common to all five cohorts. n=373 (of 781 downloaded EGD
+// subjects; the other 400 carry CNN-generated "AUTO" segmentations, per EGD's
+// own paper -- unsuitable as ground truth here, since scoring one CNN against
+// another CNN's output measures inter-model agreement, not clinical accuracy).
+// Images required HD-BET skull-stripping before evaluation (EGD ships
+// full-head MRI, unlike BraTS's pre-skull-stripped convention) -- the model
+// had never seen skull/scalp tissue, and without this step the same 373
+// cases scored Dice_WT 0.58 with 120mm HD95 (false positives on unfamiliar
+// tissue, not a real generalization result).
+const EGD_WT = { n: 373, Dice: 0.8104, HD95: 15.33, NSD: 0.6297, Sens: 0.8231, Prec: 0.8288, Spec: 0.9966 };
+
+function renderEgdComparison(){
+  const dice = metrics[0], hd95 = metrics[1], nsd = metrics[2], sens = metrics[3], prec = metrics[4], spec = metrics[5];
+  const cohorts = [
+    { key: 'home',         name: 'BraTS2021 (home)', n: 251, colorVar: '--series-home',
+      Dice: dice.home.WT, HD95: hd95.home.WT, NSD: nsd.home.WT, Sens: sens.home.WT, Prec: prec.home.WT, Spec: spec.home.WT },
+    { key: 'africaGlioma', name: 'BraTS-Africa — Glioma', n: 95, colorVar: '--series-africa',
+      Dice: dice.africaGlioma.WT, HD95: hd95.africaGlioma.WT, NSD: nsd.africaGlioma.WT, Sens: sens.africaGlioma.WT, Prec: prec.africaGlioma.WT, Spec: spec.africaGlioma.WT },
+    { key: 'africaOther',  name: 'BraTS-Africa — Other Neoplasms', n: 51, colorVar: '--series-other',
+      Dice: dice.africaOther.WT, HD95: hd95.africaOther.WT, NSD: nsd.africaOther.WT, Sens: sens.africaOther.WT, Prec: prec.africaOther.WT, Spec: spec.africaOther.WT },
+    { key: 'ucsf',         name: 'UCSF-PDGM (clean)', n: 239, colorVar: '--series-ucsf',
+      Dice: dice.ucsf.WT, HD95: hd95.ucsf.WT, NSD: nsd.ucsf.WT, Sens: sens.ucsf.WT, Prec: prec.ucsf.WT, Spec: spec.ucsf.WT },
+    { key: 'egd',          name: 'EGD', n: EGD_WT.n, colorVar: '--series-egd', ...EGD_WT },
+  ];
+  const rows = [
+    { label: 'Dice',        key: 'Dice', decimals: 3 },
+    { label: 'Sensitivity', key: 'Sens', decimals: 3 },
+    { label: 'Precision',   key: 'Prec', decimals: 3 },
+    { label: 'Specificity', key: 'Spec', decimals: 3 },
+    { label: 'HD95 (mm)',   key: 'HD95', decimals: 1 },
+    { label: 'NSD',         key: 'NSD', decimals: 3 },
+  ];
+  const head = cohorts.map(c => `<th><span class="sw" style="background:var(${c.colorVar})"></span>${c.name}<br>(n=${c.n})</th>`).join('');
+  const body = rows.map(r => `<tr><td>${r.label}</td>${cohorts.map(c => `<td>${c[r.key].toFixed(r.decimals)}</td>`).join('')}</tr>`).join('');
+
+  document.getElementById('egdCompare').innerHTML = `
+    <h2>Whole tumor across all five cohorts</h2>
+    <p>EGD's ground truth is a <b>binary whole-tumor mask</b> (no NCR/edema/ET
+    distinction), so it can't be scored on the per-region charts above or the
+    Mean columns in the stat strip. WT is the one region every cohort shares
+    &mdash; this table lines up EGD against the WT-only slice of the other four
+    results for a direct, apples-to-apples comparison.</p>
+    <table class="ra"><thead><tr><th>Metric</th>${head}</tr></thead><tbody>${body}</tbody></table>`;
+
+  document.getElementById('calloutEgd').innerHTML = `
+    <b>EGD (third external institution, Erasmus MC):</b> whole-tumor Dice
+    ${EGD_WT.Dice.toFixed(3)} on ${EGD_WT.n} manually-segmented subjects &mdash;
+    below the home split's WT Dice (${dice.home.WT.toFixed(3)}) and BraTS-Africa
+    Glioma's (${dice.africaGlioma.WT.toFixed(3)}), roughly in the same range as
+    BraTS-Africa Other Neoplasms' WT Dice (${dice.africaOther.WT.toFixed(3)}) despite
+    EGD being an in-task glioma cohort, not an out-of-task stress test like Other
+    Neoplasms. Sensitivity (${EGD_WT.Sens.toFixed(3)}) and Precision
+    (${EGD_WT.Prec.toFixed(3)}) are fairly balanced, unlike the precision-dominated
+    failure pattern seen on BraTS-Africa's NCR region, suggesting this drop is a
+    genuine whole-tumor boundary/detection difficulty on this cohort rather than
+    the same systematic over- or under-segmentation bias seen elsewhere. The
+    <b>only</b> two evaluation choices this project had to make for EGD that don't
+    exist for the other cohorts &mdash; HD-BET skull-stripping and excluding the
+    400 CNN-segmented "AUTO" subjects &mdash; are both described in the dataset
+    table above.`;
+}
 
 function renderRegionAware(){
   const cohorts = [
@@ -640,6 +709,7 @@ function renderChart(metric){
 document.getElementById('charts').innerHTML = metrics.map(renderChart).join('');
 renderStats();
 renderRegionAware();
+renderEgdComparison();
 renderLeakageDiagnostic();
 
 metrics.forEach(metric => {
